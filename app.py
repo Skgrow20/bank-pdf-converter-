@@ -22,6 +22,17 @@ else:
 
 app.secret_key = 'bank_statement_converter_auth_secret_key_19.06.26'
 
+# Server-side in-memory cache for preview transactions to prevent Flask cookie size overflow
+_PREVIEW_CACHE = {}
+
+def get_preview_cache_id():
+    cid = session.get('preview_cache_id')
+    if not cid:
+        cid = uuid.uuid4().hex
+        session['preview_cache_id'] = cid
+    return cid
+
+
 
 @app.before_request
 def check_auth_and_device():
@@ -159,7 +170,8 @@ def get_excel_sheets():
 @app.route('/preview', methods=['GET', 'POST'])
 def preview():
     if request.method == 'GET':
-        cached_txs = session.get('cached_transactions')
+        cid = session.get('preview_cache_id')
+        cached_txs = _PREVIEW_CACHE.get(cid) if cid else None
         if cached_txs:
             return render_template('preview.html', transactions=cached_txs)
         return redirect(url_for('pdf_to_tally'))
@@ -225,7 +237,9 @@ def preview():
                 except ValueError:
                     pass
             
-        session['cached_transactions'] = all_transactions
+        cid = get_preview_cache_id()
+        _PREVIEW_CACHE[cid] = all_transactions
+        session.pop('cached_transactions', None)
         return render_template('preview.html', transactions=all_transactions)
     except Exception as e:
         return render_template('index.html', error=f'An unexpected error occurred during processing: {str(e)}')
@@ -1153,6 +1167,36 @@ def add_user_route():
         flash(f"{msg}", 'success')
     else:
         flash(msg, 'error')
+        
+    return redirect(url_for('users'))
+
+
+@app.route('/admin/change_credentials', methods=['POST'])
+def change_admin_credentials():
+    if session.get('role') != 'admin':
+        abort(403)
+        
+    current_username = session.get('username')
+    new_username = request.form.get('new_username', '').strip()
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+    
+    if new_password != confirm_password:
+        flash("New password and confirm password do not match.", "error")
+        return redirect(url_for('users'))
+        
+    ok, msg = user_manager.change_admin_credentials(
+        current_user=current_username,
+        new_username=new_username,
+        current_password=current_password,
+        new_password=new_password
+    )
+    if ok:
+        session['username'] = new_username
+        flash(f"✅ {msg} Your new login username is '{new_username}'.", "success")
+    else:
+        flash(f"❌ {msg}", "error")
         
     return redirect(url_for('users'))
 
