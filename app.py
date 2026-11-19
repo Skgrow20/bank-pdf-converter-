@@ -1342,6 +1342,11 @@ def robots_txt():
     return content, 200, {'Content-Type': 'text/plain'}
 
 
+@app.route('/google9c968ba59091574f.html')
+def google_verification_file():
+    return "google-site-verification: google9c968ba59091574f.html", 200, {'Content-Type': 'text/html'}
+
+
 if __name__ == '__main__':
     import webbrowser
     from threading import Timer
