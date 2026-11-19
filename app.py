@@ -56,8 +56,12 @@ def check_auth_and_device():
     if not is_auth:
         device_manager.add_pending_request(token, request.remote_addr)
     
+    # Allow public access to Google verification, robots.txt, and static assets
+    if request.path.startswith('/google') or request.path in ['/robots.txt', '/favicon.ico']:
+        return None
+
     # Allow access to login, logout, unauthorized error page, register, verify_otp, and static assets
-    if request.endpoint in ['login', 'logout', 'device_unauthorized', 'static', 'register', 'verify_otp'] or not request.endpoint:
+    if request.endpoint in ['login', 'logout', 'device_unauthorized', 'static', 'register', 'verify_otp', 'robots_txt', 'google_verification_file'] or not request.endpoint:
         return None
         
     if not is_auth:
