@@ -592,13 +592,29 @@ Bank PDF Converter System
 """
     msg.attach(MIMEText(body, 'plain'))
 
+    # 1. Try Google Apps Script Webhook first (HTTPS Port 443 - works on Render Free Tier!)
+    gsheet_config = load_gsheet_config()
+    webhook_url = gsheet_config.get("webhook_url", "").strip()
+    if webhook_url:
+        ok, res_msg = _post_to_google_sheet({
+            "action": "send_otp",
+            "to": receiver,
+            "subject": f"Registration OTP Code for {username} ({full_name or 'New User'})",
+            "body": body,
+            "username": username,
+            "otp": str(otp)
+        }, target_url=webhook_url)
+        if ok:
+            return True, "Email sent successfully via Google Cloud Webhook."
+
+    # 2. Fallback to direct SMTP (for local PC or unblocked servers)
     try:
         if port == 465:
-            with smtplib.SMTP_SSL(server, port, timeout=10) as s:
+            with smtplib.SMTP_SSL(server, port, timeout=5) as s:
                 s.login(sender, password)
                 s.sendmail(sender, receiver, msg.as_string())
         else:
-            with smtplib.SMTP(server, port, timeout=10) as s:
+            with smtplib.SMTP(server, port, timeout=5) as s:
                 s.starttls()
                 s.login(sender, password)
                 s.sendmail(sender, receiver, msg.as_string())
