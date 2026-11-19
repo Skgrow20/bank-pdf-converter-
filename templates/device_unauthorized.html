@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - Device Unauthorized</title>
+    <!-- Modern Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 25, 40, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #4f46e5;
+            --primary-hover: #6366f1;
+            --accent: #06b6d4;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --danger: #f87171;
+            --success: #34d399;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Dynamic background blobs for premium aesthetic */
+        .bg-blobs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            animation: float 20s infinite alternate;
+        }
+
+        .blob-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--danger);
+            top: -150px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--primary);
+            bottom: -100px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, 30px) scale(1.08); }
+            100% { transform: translate(-20px, -50px) scale(0.92); }
+        }
+
+        /* Glassmorphic Container */
+        .card-container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+            text-align: center;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .shield-icon {
+            font-size: 5rem;
+            color: var(--danger);
+            margin-bottom: 20px;
+            display: inline-block;
+            animation: pulse-shield 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-shield {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 15px rgba(248, 113, 113, 0.4)); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #fff 30%, var(--danger) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.message {
+            font-size: 0.98rem;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        /* Device ID Display Box */
+        .device-id-box {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .device-id {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.05em;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: var(--text-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Buttons block */
+        .buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            display: flex;
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, #312e81 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+        }
+
+        .btn-secondary {
+            display: flex;
+            width: 100%;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: var(--text-muted);
+            padding: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Premium Animated Background -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Denied card -->
+    <div class="card-container">
+        <span class="shield-icon">🛡️</span>
+        <h1>PC Unauthorized</h1>
+        <p class="message">
+            This computer is not authorized to use the Bank Statement Converter. 
+            Please request your administrator to authorize this device.
+        </p>
+
+        <!-- Device Request ID -->
+        <div class="device-id-box">
+            <span class="label">Device Request ID</span>
+            <span class="device-id" id="dev-id-text">{{ device_id }}</span>
+            <button type="button" class="btn-copy" id="btn-copy">Copy Device ID</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="buttons-group">
+            <button onclick="window.location.reload();" class="btn-primary">
+                🔄 Check Authorization Status
+            </button>
+            <a href="/login" class="btn-secondary">
+                👤 Admin Login to Authorize This PC
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Copy to clipboard helper
+        const copyBtn = document.getElementById('btn-copy');
+        const devIdText = document.getElementById('dev-id-text').textContent;
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(devIdText).then(() => {
+                copyBtn.textContent = 'Copied!';
+                copyBtn.style.color = 'var(--success)';
+                copyBtn.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+                
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy Device ID';
+                    copyBtn.style.color = 'var(--text-color)';
+                    copyBtn.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
+    </script>
+</body>
+</html>

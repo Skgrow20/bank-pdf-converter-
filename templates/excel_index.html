@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Statement Excel to Tally Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Early Theme Detection -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('bank_app_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 25, 40, 0.55);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f1f5f9;
+            --text-muted: #94a3b8;
+            --primary: #06b6d4;
+            --primary-hover: #0891b2;
+            --accent: #06b6d4;
+            --accent-hover: #0891b2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --glass-glow: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0) 70%);
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: #cbd5e1;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --accent: #0284c7;
+            --accent-hover: #0369a1;
+            --success: #059669;
+            --danger: #dc2626;
+            --glass-glow: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.08) 0%, rgba(2, 132, 199, 0) 70%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 100px 20px 40px 20px;
+        }
+
+        /* Ambient background blobs */
+        .bg-blobs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(79, 70, 229, 0.05) 50%, rgba(0,0,0,0) 100%);
+            filter: blur(60px);
+            border-radius: 50%;
+        }
+
+        .blob-1 {
+            top: -10%;
+            right: -10%;
+            animation: float 25s infinite alternate ease-in-out;
+        }
+
+        .blob-2 {
+            bottom: -15%;
+            left: -10%;
+            animation: float 30s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 30px) scale(1.15); }
+        }
+
+        /* Glassmorphic layout header */
+        .header {
+            width: 100%;
+            background: rgba(17, 25, 40, 0.4);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .header-logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-tag {
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .btn-nav {
+            font-size: 0.88rem;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        .btn-nav:hover {
+            color: var(--accent);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .btn-nav.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4);
+        }
+
+        .btn-logout {
+            font-size: 0.88rem;
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(248, 113, 113, 0.03);
+        }
+
+        .btn-logout:hover {
+            background: rgba(248, 113, 113, 0.15);
+            border-color: var(--danger);
+            color: #fff;
+        }
+
+        /* Converter Panel Container */
+        .container {
+            max-width: 650px;
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            z-index: 10;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--glass-glow);
+            opacity: 0.8;
+            pointer-events: none;
+            border-radius: 24px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        /* Drag & Drop Area */
+        .dropzone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 18px;
+            padding: 50px 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.01);
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent);
+            background: rgba(6, 182, 212, 0.04);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+        }
+
+        .dropzone-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .dropzone:hover .dropzone-icon {
+            transform: translateY(-4px);
+        }
+
+        .dropzone-text h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .dropzone-text p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Upload Queue List */
+        .file-list {
+            margin-bottom: 24px;
+            max-height: 180px;
+            overflow-y: auto;
+            border-radius: 12px;
+            padding: 2px;
+        }
+
+        .file-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            text-align: left;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .excel-icon {
+            font-size: 24px;
+            margin-right: 12px;
+            color: #10b981;
+        }
+
+        .file-details {
+            overflow: hidden;
+        }
+
+        .file-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.2s ease;
+            padding: 4px;
+        }
+
+        .remove-btn:hover {
+            color: #ef4444;
+        }
+
+        /* Action Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent) 0%, #115e59 100%);
+            border: none;
+            border-radius: 14px;
+            color: #ffffff !important;
+            padding: 16px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+            color: #ffffff !important;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn:disabled {
+            background: rgba(255, 255, 255, 0.08) !important;
+            color: rgba(255, 255, 255, 0.4) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: none !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+        }
+
+        /* Spinner for loading state */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Alert notifications */
+        .alert {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        /* Premium Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(12px) saturate(180%);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-card {
+            background: rgba(17, 25, 40, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .loading-overlay.active .loading-card {
+            transform: translateY(0);
+        }
+
+        .loading-spinner-wrapper {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px auto;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(6, 182, 212, 0.1);
+            border-top: 4px solid var(--accent);
+            border-right: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, rgba(79, 70, 229, 0) 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .loading-card h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #fff;
+            letter-spacing: 0.02em;
+        }
+
+        .loading-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Animated Theme Switch Component (Conor Bailey Style) */
+        .theme-switch {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: transform 0.2s ease;
+        }
+
+        .theme-switch:hover {
+            transform: scale(1.06);
+        }
+
+        .theme-switch:active {
+            transform: scale(0.96);
+        }
+
+        .theme-switch-track {
+            width: 58px;
+            height: 28px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            box-sizing: border-box;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .theme-switch-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-switch-icon.sun-icon {
+            color: #fbbf24;
+            opacity: 0.35;
+            transform: scale(0.85);
+        }
+
+        .theme-switch-icon.moon-icon {
+            color: #38bdf8;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .theme-switch-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8 0%, #4f46e5 100%);
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.5);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.4s ease, box-shadow 0.4s ease;
+            transform: translateX(30px);
+            z-index: 2;
+        }
+
+        /* High Contrast Light Mode Component Styling */
+        [data-theme="light"] body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .theme-switch-track {
+            background: linear-gradient(135deg, #bae6fd 0%, #e0f2fe 100%);
+            border: 1.5px solid #7dd3fc;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(2, 132, 199, 0.15);
+        }
+
+        [data-theme="light"] .theme-switch-icon.sun-icon {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            color: #d97706;
+        }
+
+        [data-theme="light"] .theme-switch-icon.moon-icon {
+            opacity: 0.35;
+            transform: scale(0.8);
+            color: #64748b;
+        }
+
+        [data-theme="light"] .theme-switch-thumb {
+            transform: translateX(0px);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.5);
+        }
+
+        [data-theme="light"] .header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid #cbd5e1;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="light"] .header-logo {
+            background: linear-gradient(135deg, #0f172a 30%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        [data-theme="light"] .btn-nav {
+            color: #334155;
+        }
+
+        [data-theme="light"] .btn-nav:hover {
+            color: #0284c7;
+            background: #e2e8f0;
+        }
+
+        [data-theme="light"] .btn-nav.active {
+            background: #0284c7;
+            color: #ffffff;
+        }
+
+        [data-theme="light"] .user-tag {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        [data-theme="light"] .container {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="light"] h1 {
+            background: linear-gradient(135deg, #0f172a 30%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        [data-theme="light"] p.subtitle {
+            color: #64748b;
+        }
+
+        [data-theme="light"] .dropzone {
+            border: 2px dashed #cbd5e1;
+            background: #f8fafc;
+        }
+
+        [data-theme="light"] .dropzone:hover, [data-theme="light"] .dropzone.dragover {
+            border-color: #0284c7;
+            background: #f0f9ff;
+        }
+
+        [data-theme="light"] .dropzone-text h3 {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .dropzone-text p {
+            color: #64748b;
+        }
+
+        [data-theme="light"] .file-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        [data-theme="light"] .file-name {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .file-size {
+            color: #64748b;
+        }
+
+        [data-theme="light"] #sheet-selector-group {
+            background: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        [data-theme="light"] #sheet-select {
+            background: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+
+        [data-theme="light"] .btn {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.25) !important;
+        }
+
+        [data-theme="light"] .btn:hover {
+            background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%) !important;
+            color: #ffffff !important;
+        }
+
+        [data-theme="light"] .btn:disabled {
+            background: #e2e8f0 !important;
+            color: #94a3b8 !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
+            cursor: not-allowed !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <a href="/" class="header-logo">Bank PDF Converter</a>
+        <nav class="nav-items">
+            <a href="/pdf_to_tally" class="btn-nav">📄 PDF to Tally</a>
+            <a href="/excel_to_tally" class="btn-nav active">📊 Excel to Tally</a>
+            {% if current_user.role == 'admin' %}
+            <a href="/users" class="btn-nav">👥 User Management</a>
+            {% endif %}
+            <button class="theme-switch" id="theme-toggle-btn" title="Toggle Light / Dark Mode" aria-label="Toggle theme">
+                <div class="theme-switch-track">
+                    <div class="theme-switch-icon sun-icon">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="4.5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </div>
+                    <div class="theme-switch-icon moon-icon">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </div>
+                    <div class="theme-switch-thumb"></div>
+                </div>
+            </button>
+            <span class="user-tag">👤 {{ current_user.username }} ({{ current_user.role }})</span>
+            <a href="/logout" class="btn-logout">🚪 Logout</a>
+        </nav>
+    </header>
+
+    <!-- Animated background -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Upload Panel -->
+    <div class="container">
+        <h1>Bank Excel to Tally</h1>
+        <p class="subtitle">Upload transaction sheets or Tally Excel templates (.xlsx, .xlsm) to import directly to Tally Prime</p>
+
+        <!-- Error Alert Bar -->
+        {% if error %}
+        <div class="alert" id="error-alert" style="display: block;">{{ error }}</div>
+        {% else %}
+        <div class="alert" id="error-alert"></div>
+        {% endif %}
+
+        <form id="upload-form" action="/excel_to_tally" method="POST" enctype="multipart/form-data">
+            <!-- Drag & Drop Dropzone -->
+            <div class="dropzone" id="dropzone">
+                <span class="dropzone-icon">📥</span>
+                <div class="dropzone-text">
+                    <h3>Drag & drop Excel files here</h3>
+                    <p>or click to browse from your computer</p>
+                </div>
+                <input type="file" id="file-input" name="files" multiple accept=".xlsx, .xlsm">
+            </div>
+
+            <!-- Selected Files Queue -->
+            <div class="file-list" id="file-list"></div>
+
+            <input type="hidden" name="selected_sheet" id="selected-sheet-input">
+            
+            <!-- Dynamic Sheet Selector -->
+            <div id="sheet-selector-group" style="display: none; margin-top: 15px; margin-bottom: 15px; text-align: left; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 18px;">
+                <label for="sheet-select" style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 8px;">Select Worksheet to Parse</label>
+                <div style="position: relative; width: 100%;">
+                    <select id="sheet-select" style="width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 0.9rem; font-family: 'Outfit', sans-serif; outline: none; cursor: pointer; -webkit-appearance: none; -moz-appearance: none; appearance: none; transition: all 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.15)'">
+                        <!-- populated dynamically -->
+                    </select>
+                    <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--text-muted); font-size: 0.75rem;">▼</span>
+                </div>
+            </div>
+
+            <!-- Conversion trigger button -->
+            <button type="submit" class="btn" id="preview-btn" disabled>
+                <span class="spinner" id="btn-spinner"></span>
+                <span id="btn-text">👁️ Preview Transactions</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Premium Full-Screen Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-card">
+            <div class="loading-spinner-wrapper">
+                <div class="loading-spinner"></div>
+                <div class="loading-pulse"></div>
+            </div>
+            <h2>Reading Excel Sheets</h2>
+            <p>Loading sheet rows and auto-mapping columns. Please wait...</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const previewBtn = document.getElementById('preview-btn');
+        const errorAlert = document.getElementById('error-alert');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const btnText = document.getElementById('btn-text');
+        const uploadForm = document.getElementById('upload-form');
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        let queue = [];
+
+        // Setup dropzone click to open file picker
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        // File picker change
+        fileInput.addEventListener('change', handleFileSelection);
+
+        // Drag & Drop event bindings
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        // Drop files
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            addFilesToQueue(files);
+        });
+
+        function handleFileSelection(e) {
+            addFilesToQueue(e.target.files);
+        }
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function addFilesToQueue(files) {
+            if (errorAlert) errorAlert.style.display = 'none';
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const ext = file.name.toLowerCase();
+                if (ext.endsWith('.xlsx') || ext.endsWith('.xlsm')) {
+                    // Check if already in queue
+                    if (!queue.some(f => f.name === file.name && f.size === file.size)) {
+                        queue.push(file);
+                    }
+                } else {
+                    showError("Only Excel files (.xlsx, .xlsm) are supported!");
+                }
+            }
+            updateUI();
+            fileInput.value = ''; // Reset input element
+        }
+
+        function removeFile(index) {
+            queue.splice(index, 1);
+            updateUI();
+        }
+
+        function showError(msg) {
+            if (errorAlert) {
+                errorAlert.textContent = msg;
+                errorAlert.style.display = 'block';
+            }
+        }
+
+        async function fetchSheetsForFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const res = await fetch('/get_excel_sheets', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    return data.sheets || [];
+                }
+            } catch (err) {
+                console.error("Error fetching sheets:", err);
+            }
+            return [];
+        }
+
+        async function checkSheets() {
+            const sheetSelectorGroup = document.getElementById('sheet-selector-group');
+            const sheetSelect = document.getElementById('sheet-select');
+            const selectedSheetInput = document.getElementById('selected-sheet-input');
+            
+            if (queue.length === 0) {
+                sheetSelectorGroup.style.display = 'none';
+                selectedSheetInput.value = '';
+                return;
+            }
+            
+            const firstFile = queue[0];
+            const sheets = await fetchSheetsForFile(firstFile);
+            
+            if (sheets.length > 1) {
+                // Populate dropdown options
+                sheetSelect.innerHTML = '';
+                sheets.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sheetSelect.appendChild(opt);
+                });
+                
+                // Set default selected sheet based on heuristics (Run Code, DRCR, WD, etc.)
+                let defaultSheet = sheets[0];
+                for (let name of ['Run Code', 'DRCR', 'WD', 'Transactions']) {
+                    if (sheets.includes(name)) {
+                        defaultSheet = name;
+                        break;
+                    }
+                }
+                sheetSelect.value = defaultSheet;
+                selectedSheetInput.value = defaultSheet;
+                
+                // Show selector
+                sheetSelectorGroup.style.display = 'block';
+                
+                // Event listener on select change
+                sheetSelect.onchange = (e) => {
+                    selectedSheetInput.value = e.target.value;
+                };
+            } else {
+                sheetSelectorGroup.style.display = 'none';
+                selectedSheetInput.value = '';
+            }
+        }
+
+        function updateUI() {
+            fileList.innerHTML = '';
+            
+            if (queue.length === 0) {
+                previewBtn.disabled = true;
+                checkSheets(); // hide selector group
+                return;
+            }
+
+            queue.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                
+                item.innerHTML = `
+                    <div class="file-info">
+                        <span class="excel-icon">📊</span>
+                        <div class="file-details">
+                            <div class="file-name" title="${file.name}">${file.name}</div>
+                            <div class="file-size">${formatBytes(file.size)}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="remove-btn" onclick="removeFile(${index})">✕</button>
+                `;
+                fileList.appendChild(item);
+            });
+
+            previewBtn.disabled = false;
+            checkSheets();
+        }
+
+        uploadForm.addEventListener('submit', (e) => {
+            if (queue.length === 0) {
+                e.preventDefault();
+                return;
+            }
+
+            const dataTransfer = new DataTransfer();
+            queue.forEach(file => {
+                dataTransfer.items.add(file);
+            });
+            fileInput.files = dataTransfer.files;
+
+            previewBtn.disabled = true;
+            btnSpinner.style.display = 'inline-block';
+            btnText.textContent = 'Uploading...';
+            loadingOverlay.classList.add('active');
+        });
+
+        // Animated Theme Toggle with Conor Bailey Circular Ripple Expansion
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', (e) => {
+                const curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                const nextTheme = (curTheme === 'dark') ? 'light' : 'dark';
+
+                // Create circular expansion wave origin at toggle button center
+                const rect = themeToggleBtn.getBoundingClientRect();
+                const rippleX = rect.left + rect.width / 2;
+                const rippleY = rect.top + rect.height / 2;
+                const maxDist = Math.hypot(
+                    Math.max(rippleX, window.innerWidth - rippleX),
+                    Math.max(rippleY, window.innerHeight - rippleY)
+                ) * 2.2;
+
+                const ripple = document.createElement('div');
+                ripple.style.position = 'fixed';
+                ripple.style.left = `${rippleX}px`;
+                ripple.style.top = `${rippleY}px`;
+                ripple.style.width = '10px';
+                ripple.style.height = '10px';
+                ripple.style.marginLeft = '-5px';
+                ripple.style.marginTop = '-5px';
+                ripple.style.borderRadius = '50%';
+                ripple.style.pointerEvents = 'none';
+                ripple.style.zIndex = '99999';
+                ripple.style.background = nextTheme === 'light' 
+                    ? 'radial-gradient(circle, rgba(241,245,249,0.95) 0%, rgba(226,232,240,0.85) 100%)' 
+                    : 'radial-gradient(circle, rgba(11,15,25,0.98) 0%, rgba(15,23,42,0.95) 100%)';
+                ripple.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease';
+                ripple.style.transform = 'scale(1)';
+                document.body.appendChild(ripple);
+
+                requestAnimationFrame(() => {
+                    const scaleFactor = (maxDist / 10) * 1.2;
+                    ripple.style.transform = `scale(${scaleFactor})`;
+                    
+                    setTimeout(() => {
+                        document.documentElement.setAttribute('data-theme', nextTheme);
+                        localStorage.setItem('bank_app_theme', nextTheme);
+                    }, 180);
+
+                    setTimeout(() => {
+                        ripple.style.opacity = '0';
+                        setTimeout(() => ripple.remove(), 400);
+                    }, 380);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

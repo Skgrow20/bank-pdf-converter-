@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User & Device Management - Bank Statement Converter</title>
+    <!-- Modern Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Early Theme Detection -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('bank_app_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 25, 40, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #4f46e5;
+            --primary-hover: #6366f1;
+            --accent: #06b6d4;
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --danger: #f87171;
+            --success: #34d399;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --card-border: #cbd5e1;
+            --primary: #4338ca;
+            --primary-hover: #3730a3;
+            --accent: #0284c7;
+            --text-color: #0f172a;
+            --text-muted: #475569;
+            --danger: #dc2626;
+            --success: #059669;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Dynamic background blobs for premium aesthetic */
+        .bg-blobs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            animation: float 20s infinite alternate;
+        }
+
+        .blob-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--primary);
+            top: -150px;
+            left: -100px;
+        }
+
+        .blob-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent);
+            bottom: -100px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(50px, 30px) scale(1.08); }
+            100% { transform: translate(-20px, -50px) scale(0.92); }
+        }
+
+        /* Header Navbar Navigation */
+        .header {
+            width: 100%;
+            background: rgba(17, 25, 40, 0.4);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .header-logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-tag {
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .btn-nav {
+            font-size: 0.88rem;
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        .btn-nav:hover {
+            color: var(--accent);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .btn-nav.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-logout {
+            font-size: 0.88rem;
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 600;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: rgba(248, 113, 113, 0.03);
+        }
+
+        .btn-logout:hover {
+            background: rgba(248, 113, 113, 0.15);
+            border-color: var(--danger);
+            color: #fff;
+        }
+
+        /* Page Layout */
+        .page-container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 40px 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Tabs Selector */
+        .tabs-container {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 16px;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            color: var(--text-muted);
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .tab-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Tab Content Panes */
+        .tab-pane {
+            display: none;
+            width: 100%;
+        }
+
+        .tab-pane.active-pane {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            gap: 30px;
+            width: 100%;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 850px) {
+            .tab-pane.active-pane {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphic Panel/Card */
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-self: flex-start;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Form styling */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        input, select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 8px rgba(6, 182, 212, 0.25);
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        select option {
+            background: #0f172a;
+            color: var(--text-color);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, #312e81 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Alert notifications */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(52, 211, 153, 0.12);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            color: #a7f3d0;
+        }
+
+        /* Users Table styling */
+        .table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            text-align: left;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #0f172a;
+            z-index: 1;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        th {
+            padding: 12px 14px;
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
+            color: var(--text-color);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .role-admin {
+            background: rgba(6, 182, 212, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+        }
+
+        .role-operator {
+            background: rgba(245, 158, 11, 0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+        }
+
+        .role-viewer {
+            background: rgba(156, 163, 175, 0.12);
+            color: #d1d5db;
+            border: 1px solid rgba(156, 163, 175, 0.22);
+        }
+
+        .btn-delete, .btn-action {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover:not(:disabled), .btn-action:hover:not(:disabled) {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-delete:disabled, .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            color: var(--text-muted);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-approve {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            color: var(--success);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-approve:hover {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+            box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
+        }
+
+        .no-data {
+            padding: 30px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        .sub-header {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 12px;
+            color: #fff;
+            border-left: 3px solid var(--accent);
+            padding-left: 10px;
+        }
+
+        /* Inline Input in table */
+        .inline-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #fff;
+            font-size: 0.8rem;
+            width: 140px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        /* Animated Theme Switch Component (Conor Bailey Style) */
+        .theme-switch {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: transform 0.2s ease;
+        }
+
+        .theme-switch:hover {
+            transform: scale(1.06);
+        }
+
+        .theme-switch:active {
+            transform: scale(0.96);
+        }
+
+        .theme-switch-track {
+            width: 58px;
+            height: 28px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            box-sizing: border-box;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .theme-switch-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-switch-icon.sun-icon {
+            color: #fbbf24;
+            opacity: 0.35;
+            transform: scale(0.85);
+        }
+
+        .theme-switch-icon.moon-icon {
+            color: #38bdf8;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .theme-switch-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8 0%, #4f46e5 100%);
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.5);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.4s ease, box-shadow 0.4s ease;
+            transform: translateX(30px);
+            z-index: 2;
+        }
+
+        /* High Contrast Light Mode Component Styling */
+        [data-theme="light"] body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .theme-switch-track {
+            background: linear-gradient(135deg, #bae6fd 0%, #e0f2fe 100%);
+            border: 1.5px solid #7dd3fc;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(2, 132, 199, 0.15);
+        }
+
+        [data-theme="light"] .theme-switch-icon.sun-icon {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+            color: #d97706;
+        }
+
+        [data-theme="light"] .theme-switch-icon.moon-icon {
+            opacity: 0.35;
+            transform: scale(0.8);
+            color: #64748b;
+        }
+
+        [data-theme="light"] .theme-switch-thumb {
+            transform: translateX(0px);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.5);
+        }
+
+        [data-theme="light"] .header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid #cbd5e1;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="light"] .header-logo {
+            background: linear-gradient(135deg, #0f172a 30%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        [data-theme="light"] .btn-nav {
+            color: #334155;
+        }
+
+        [data-theme="light"] .btn-nav:hover {
+            color: #0284c7;
+            background: #e2e8f0;
+        }
+
+        [data-theme="light"] .btn-nav.active {
+            background: #4338ca;
+            color: #ffffff;
+        }
+
+        [data-theme="light"] .user-tag {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        [data-theme="light"] .tabs-container {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+        }
+
+        [data-theme="light"] .tab-btn {
+            color: #475569;
+        }
+
+        [data-theme="light"] .tab-btn:hover {
+            color: #0f172a;
+            background: #f1f5f9;
+        }
+
+        [data-theme="light"] .tab-btn.active {
+            background: #4338ca;
+            color: #ffffff;
+        }
+
+        [data-theme="light"] .panel {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="light"] .panel h2 {
+            background: linear-gradient(135deg, #0f172a 30%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        [data-theme="light"] .form-group input,
+        [data-theme="light"] .form-group select {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .form-group label {
+            color: #475569;
+        }
+
+        [data-theme="light"] .table-container {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+        }
+
+        [data-theme="light"] table th {
+            background: #f1f5f9;
+            color: #1e293b;
+            border-bottom: 2px solid #cbd5e1;
+            font-weight: 700;
+        }
+
+        [data-theme="light"] table td {
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+        }
+
+        [data-theme="light"] table tr:hover td {
+            background: #f8fafc;
+        }
+
+        [data-theme="light"] .inline-input {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .sub-header {
+            color: #0f172a;
+        }
+
+        [data-theme="light"] .btn-submit {
+            background: linear-gradient(135deg, #4338ca 0%, #312e81 100%) !important;
+            color: #ffffff !important;
+        }
+
+        [data-theme="light"] .btn-action {
+            color: #ffffff !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Premium Animated Background -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <a href="/" class="header-logo">Bank PDF Converter</a>
+        <nav class="nav-items">
+            <a href="/pdf_to_tally" class="btn-nav">📄 PDF to Tally</a>
+            <a href="/excel_to_tally" class="btn-nav">📊 Excel to Tally</a>
+            <a href="/users" class="btn-nav active">👥 User Management</a>
+            <button class="theme-switch" id="theme-toggle-btn" title="Toggle Light / Dark Mode" aria-label="Toggle theme">
+                <div class="theme-switch-track">
+                    <div class="theme-switch-icon sun-icon">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="4.5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </div>
+                    <div class="theme-switch-icon moon-icon">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </div>
+                    <div class="theme-switch-thumb"></div>
+                </div>
+            </button>
+            <span class="user-tag">👤 {{ session.get('username', 'user') }} ({{ session.get('role', 'viewer') }})</span>
+            <a href="/logout" class="btn-logout">🚪 Logout</a>
+        </nav>
+    </header>
+
+    <!-- Main Workspace container -->
+    <main class="page-container">
+        
+        <!-- Tab Selectors -->
+        <div class="tabs-container">
+            <button class="tab-btn active" id="users-tab-btn">👥 User Accounts</button>
+            <button class="tab-btn" id="devices-tab-btn">💻 Device Authorization</button>
+            <button class="tab-btn" id="email-tab-btn">✉️ Email Config</button>
+            <button class="tab-btn" id="gsheet-tab-btn">☁️ Google Sheets Cloud</button>
+        </div>
+
+        <!-- Flashed Messages Container -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- ================= TAB 1: USER ACCOUNTS ================= -->
+        <div id="users-tab-pane" class="tab-pane active-pane">
+            <!-- 1. Add User Form -->
+            <section class="panel">
+                <h2>Add New User</h2>
+                <form action="/users/add" method="POST">
+                    <div class="form-group">
+                        <label for="full_name">Full Name (Optional)</label>
+                        <input type="text" id="full_name" name="full_name" placeholder="e.g. Rahul Sharma" autocomplete="off">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label for="mobile">Mobile No (Optional)</label>
+                            <input type="tel" id="mobile" name="mobile" placeholder="Mobile / Phone" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email (Optional)</label>
+                            <input type="email" id="email" name="email" placeholder="Email" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" placeholder="Type username" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Type password" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Authority / Role</label>
+                        <input type="text" value="Operator (Parse, Edit, Import)" disabled style="background: rgba(255, 255, 255, 0.02); color: var(--text-muted); cursor: not-allowed;">
+                        <input type="hidden" name="role" value="operator">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Create User Account</button>
+                </form>
+            </section>
+
+            <!-- 2. Existing Users List -->
+            <section class="panel" style="width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin-bottom: 0;">Active User Accounts</h2>
+                    <button type="button" onclick="switchTab('gsheet-tab')" class="btn-action" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #60a5fa; font-weight: 600; padding: 7px 14px; border-radius: 8px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        ☁️ Google Sheets Cloud Sync
+                    </button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 45%;">Username</th>
+                                <th style="width: 30%;">Authority Option</th>
+                                <th style="width: 25%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if users %}
+                                {% for u in users %}
+                                <tr>
+                                    <td style="font-weight: 500;">{{ u.username }}</td>
+                                    <td>
+                                        <span class="role-badge role-{{ u.role }}">{{ u.role }}</span>
+                                    </td>
+                                    <td>
+                                        <form action="/users/delete" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete user account &quot;{{ u.username }}&quot;?');">
+                                            <input type="hidden" name="username" value="{{ u.username }}">
+                                            <button type="submit" class="btn-delete" 
+                                                {% if u.username == session.get('username') or u.username.lower() == 'admin' %}disabled title="Cannot delete this user"{% endif %}>
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="no-data">No active users found.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= TAB 2: DEVICE AUTHORIZATION ================= -->
+        <div id="devices-tab-pane" class="tab-pane">
+            <!-- 1. Manual Device Authorization -->
+            <section class="panel">
+                <h2>Manual Authorization</h2>
+                <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Paste a Device Request ID (e.g. <code>DEV-1a2b3c4d</code>) manually to authorize it remotely.
+                </p>
+                <form action="/devices/approve" method="POST">
+                    <div class="form-group">
+                        <label for="device_id">Device Request ID</label>
+                        <input type="text" id="device_id" name="device_id" placeholder="e.g. DEV-1a2b3c4d" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="device_name">Device Name / Location</label>
+                        <input type="text" id="device_name" name="name" placeholder="e.g. Front Desk PC" required autocomplete="off">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Authorize Device</button>
+                </form>
+            </section>
+
+            <!-- 2. Device lists -->
+            <section class="panel" style="width: 100%;">
+                <!-- A. Pending Requests -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div class="sub-header" style="margin-bottom: 0;">Pending Authorization Requests</div>
+                    {% if pending_requests %}
+                    <form action="/devices/clear_pending" method="POST" onsubmit="return confirm('Clear all pending authorization requests?');" style="margin: 0;">
+                        <button type="submit" class="btn-delete" style="padding: 4px 10px; font-size: 0.78rem;">🗑️ Clear All Pending</button>
+                    </form>
+                    {% endif %}
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Request ID</th>
+                                <th style="width: 20%;">IP Address</th>
+                                <th style="width: 25%;">Requested At</th>
+                                <th style="width: 30%;">Approve Access</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if pending_requests %}
+                                {% for req in pending_requests %}
+                                <tr>
+                                    <td style="font-family: monospace; font-weight: 700; color: var(--accent);">{{ req.device_id }}</td>
+                                    <td>{{ req.ip }}</td>
+                                    <td style="font-size: 0.8rem; color: var(--text-muted);">{{ req.requested_at }}</td>
+                                    <td>
+                                        <form action="/devices/approve" method="POST" style="display: flex; gap: 8px; align-items: center;">
+                                            <input type="hidden" name="device_id" value="{{ req.device_id }}">
+                                            <input type="text" name="name" class="inline-input" placeholder="Name (e.g. Staff PC)" required>
+                                            <button type="submit" class="btn-approve">Approve</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="no-data">No pending authorization requests.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- B. Authorized Devices -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 8px;">
+                    <div class="sub-header" style="margin-bottom: 0;">Authorized PCs / Devices</div>
+                    <form action="/devices/reset_all" method="POST" onsubmit="return confirm('Reset all devices? (Your current active PC will remain authorized)');" style="margin: 0;">
+                        <button type="submit" class="btn-delete" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5;">⚠️ Reset All Devices</button>
+                    </form>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Device Name</th>
+                                <th style="width: 25%;">Device ID</th>
+                                <th style="width: 25%;">Authorized At</th>
+                                <th style="width: 20%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if authorized_devices %}
+                                {% for dev in authorized_devices %}
+                                <tr>
+                                    <td style="font-weight: 500; color: #fff;">{{ dev.name }}</td>
+                                    <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted);">{{ dev.device_id }}</td>
+                                    <td style="font-size: 0.8rem; color: var(--text-muted);">{{ dev.authorized_at }}</td>
+                                    <td>
+                                        <form action="/devices/revoke" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to revoke access for device &quot;{{ dev.name }}&quot; ({{ dev.device_id }})?');">
+                                            <input type="hidden" name="token" value="{{ dev.token }}">
+                                            <button type="submit" class="btn-delete">Revoke</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="no-data">No authorized devices found.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================= TAB 3: EMAIL CONFIGURATION ================= -->
+        <div id="email-tab-pane" class="tab-pane">
+            <section class="panel">
+                <h2>Email SMTP Settings</h2>
+                <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Configure SMTP parameters to enable email verification codes (OTP) sent to the administrator when users register accounts.
+                </p>
+                <form action="/admin/email_config" method="POST">
+                    <div class="form-group">
+                        <label for="smtp_server">SMTP Server</label>
+                        <input type="text" id="smtp_server" name="smtp_server" placeholder="e.g. smtp.gmail.com" value="{{ email_config.smtp_server }}" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smtp_port">SMTP Port</label>
+                        <input type="number" id="smtp_port" name="smtp_port" placeholder="e.g. 587 or 465" value="{{ email_config.smtp_port }}" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sender_email">Sender Email Address</label>
+                        <input type="email" id="sender_email" name="sender_email" placeholder="e.g. your-app@gmail.com" value="{{ email_config.sender_email }}" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sender_password">Sender App Password</label>
+                        <input type="password" id="sender_password" name="sender_password" placeholder="SMTP App Password" value="{{ email_config.sender_password }}" required autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="admin_email">Administrator Recipient Email</label>
+                        <input type="email" id="admin_email" name="admin_email" placeholder="e.g. admin@yourcompany.com" value="{{ email_config.admin_email }}" required autocomplete="off">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Save Configuration</button>
+                </form>
+            </section>
+        </div>
+
+        <!-- ================= TAB 4: GOOGLE SHEETS CLOUD ================= -->
+        <div id="gsheet-tab-pane" class="tab-pane">
+            <section class="panel">
+                <h2>☁️ Google Sheets Cloud Sync</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
+                    Automatically save and update all user account registrations in real-time to your <strong>Google Sheet</strong> in Google Drive cloud.
+                </p>
+
+                <form action="/admin/google_sheets_config" method="POST" style="margin-bottom: 24px;">
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                        <input type="checkbox" id="gsheet_enabled" name="enabled" value="true" {% if gsheet_config.enabled or not gsheet_config.webhook_url %}checked{% endif %} style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                        <label for="gsheet_enabled" style="margin-bottom: 0; font-size: 0.95rem; cursor: pointer; text-transform: none; color: var(--text-color);">
+                            <strong>Enable Real-Time Google Sheets Cloud Sync</strong>
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="webhook_url">Google Sheets Webhook App URL</label>
+                        <input type="url" id="webhook_url" name="webhook_url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" value="{{ gsheet_config.webhook_url }}" required autocomplete="off" style="font-family: monospace; font-size: 0.85rem;">
+                        <small style="display: block; margin-top: 6px; color: var(--text-muted); font-size: 0.78rem;">
+                            Deploy the Google Apps Script below inside your Google Sheet, then paste the Web App URL here.
+                        </small>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button type="submit" name="action" value="save" class="btn-submit" style="width: auto; padding: 10px 22px;">💾 Save Configuration</button>
+                        <button type="submit" name="action" value="test" class="btn-action" style="padding: 10px 18px; font-size: 0.88rem; background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.35); color: var(--accent);">
+                            ⚡ Test Connection (Ping Cloud)
+                        </button>
+                        <button type="submit" name="action" value="sync_all" class="btn-action" style="padding: 10px 18px; font-size: 0.88rem; background: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.35); color: var(--success);" onclick="return confirm('Sync all existing users to your Google Sheet now?');">
+                            🔄 Sync All Users to Google Sheets
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Google Apps Script Setup Guide -->
+                <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 18px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <span style="font-weight: 600; font-size: 0.88rem; color: var(--accent);">📋 Easy 1-Minute Google Sheet Setup:</span>
+                        <button type="button" id="copy-script-btn" class="btn-action" style="padding: 4px 12px; font-size: 0.78rem;">Copy Apps Script Code</button>
+                    </div>
+                    <ol style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin-left: 20px; margin-bottom: 12px;">
+                        <li>Open a new or existing sheet on <strong><a href="https://sheets.google.com" target="_blank" style="color: var(--accent);">Google Sheets</a></strong>.</li>
+                        <li>Click <strong>Extensions > Apps Script</strong> from top menu.</li>
+                        <li>Delete any sample code, paste the script code below, and click <strong>Save</strong> (💾).</li>
+                        <li>Click <strong>Deploy > New deployment</strong>. Select type: <strong>Web app</strong>.</li>
+                        <li>Set <em>Execute as:</em> <strong>Me</strong> and <em>Who has access:</em> <strong>Anyone</strong>.</li>
+                        <li>Click <strong>Deploy</strong>, copy the <strong>Web App URL</strong>, and paste it into the box above!</li>
+                    </ol>
+
+                    <textarea id="apps-script-code" readonly style="width: 100%; height: 160px; background: #070b14; color: #a5b4fc; font-family: Consolas, monospace; font-size: 0.78rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; resize: vertical;">function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() === 0) {
+      var headers = ["Sr No", "Date & Time", "Full Name", "Username", "Mobile / Phone", "Email Address", "Password", "Role", "Device ID", "IP Address", "Creation Method", "Status"];
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length).setBackground("#1F4E79").setFontColor("#FFFFFF").setFontWeight("bold").setHorizontalAlignment("center");
+      sheet.setFrozenRows(1);
+    }
+    var data = JSON.parse(e.postData.contents);
+    if (data.action === "test") {
+      sheet.appendRow(["-", Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy hh:mm:ss a"), "Connection Test", "test_ping", "-", "-", "******", "Test", "Cloud Webhook", "127.0.0.1", "Test Connection", "Success"]);
+      return ContentService.createTextOutput(JSON.stringify({status: "success", message: "Test row added"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (data.action === "delete") {
+      var delUsername = (data.username || "").toLowerCase().trim();
+      var delLastRow = sheet.getLastRow();
+      if (delLastRow > 1) {
+        var names = sheet.getRange(2, 4, delLastRow - 1, 1).getValues();
+        for (var d = 0; d < names.length; d++) {
+          if (String(names[d][0]).toLowerCase().trim() === delUsername) {
+            sheet.getRange(d + 2, 12).setValue("Deleted").setBackground("#F8D7DA").setFontColor("#721C24").setFontWeight("bold");
+            break;
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({status: "success", message: "Marked deleted"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    var username = (data.username || "").toLowerCase().trim();
+    var lastRow = sheet.getLastRow();
+    var existingRow = -1;
+    if (lastRow > 1) {
+      var usernames = sheet.getRange(2, 4, lastRow - 1, 1).getValues();
+      for (var i = 0; i < usernames.length; i++) {
+        if (String(usernames[i][0]).toLowerCase().trim() === username) {
+          existingRow = i + 2;
+          break;
+        }
+      }
+    }
+    var srNo = existingRow > 0 ? sheet.getRange(existingRow, 1).getValue() : Math.max(1, lastRow);
+    var rowValues = [
+      srNo,
+      data.date_time || Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy hh:mm:ss a"),
+      data.full_name || "-",
+      data.username || "-",
+      data.mobile || "-",
+      data.email || "-",
+      data.password || "******",
+      data.role || "Operator",
+      data.device_id || "-",
+      data.ip_address || "-",
+      data.creation_method || "Self Registration",
+      data.status || "Active"
+    ];
+    if (existingRow > 0) {
+      sheet.getRange(existingRow, 1, 1, rowValues.length).setValues([rowValues]);
+    } else {
+      sheet.appendRow(rowValues);
+    }
+    return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}</textarea>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script>
+        // Tab switching logic
+        const usersBtn = document.getElementById('users-tab-btn');
+        const devicesBtn = document.getElementById('devices-tab-btn');
+        const emailBtn = document.getElementById('email-tab-btn');
+        const gsheetBtn = document.getElementById('gsheet-tab-btn');
+        const usersPane = document.getElementById('users-tab-pane');
+        const devicesPane = document.getElementById('devices-tab-pane');
+        const emailPane = document.getElementById('email-tab-pane');
+        const gsheetPane = document.getElementById('gsheet-tab-pane');
+
+        function switchTab(tab) {
+            // Save tab state to localStorage so it stays active across reloads
+            localStorage.setItem('active_mgmt_tab', tab);
+            
+            // Remove active classes
+            usersBtn.classList.remove('active');
+            devicesBtn.classList.remove('active');
+            emailBtn.classList.remove('active');
+            if (gsheetBtn) gsheetBtn.classList.remove('active');
+            
+            usersPane.classList.remove('active-pane');
+            devicesPane.classList.remove('active-pane');
+            emailPane.classList.remove('active-pane');
+            if (gsheetPane) gsheetPane.classList.remove('active-pane');
+            
+            // Add active class to selected tab
+            if (tab === 'users') {
+                usersBtn.classList.add('active');
+                usersPane.classList.add('active-pane');
+            } else if (tab === 'devices') {
+                devicesBtn.classList.add('active');
+                devicesPane.classList.add('active-pane');
+            } else if (tab === 'email') {
+                emailBtn.classList.add('active');
+                emailPane.classList.add('active-pane');
+            } else if (tab === 'gsheet') {
+                if (gsheetBtn) gsheetBtn.classList.add('active');
+                if (gsheetPane) gsheetPane.classList.add('active-pane');
+            }
+        }
+
+        usersBtn.addEventListener('click', () => switchTab('users'));
+        devicesBtn.addEventListener('click', () => switchTab('devices'));
+        emailBtn.addEventListener('click', () => switchTab('email'));
+        if (gsheetBtn) gsheetBtn.addEventListener('click', () => switchTab('gsheet'));
+
+        // Copy Apps Script button logic
+        const copyBtn = document.getElementById('copy-script-btn');
+        const scriptCode = document.getElementById('apps-script-code');
+        if (copyBtn && scriptCode) {
+            copyBtn.addEventListener('click', () => {
+                scriptCode.select();
+                navigator.clipboard.writeText(scriptCode.value).then(() => {
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '✅ Copied!';
+                    setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
+                });
+            });
+        }
+
+        // Restore active tab on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const activeTab = localStorage.getItem('active_mgmt_tab') || 'users';
+            switchTab(activeTab);
+        });
+
+        // Animated Theme Toggle with Conor Bailey Circular Ripple Expansion
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', (e) => {
+                const curTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+                const nextTheme = (curTheme === 'dark') ? 'light' : 'dark';
+
+                // Create circular expansion wave origin at toggle button center
+                const rect = themeToggleBtn.getBoundingClientRect();
+                const rippleX = rect.left + rect.width / 2;
+                const rippleY = rect.top + rect.height / 2;
+                const maxDist = Math.hypot(
+                    Math.max(rippleX, window.innerWidth - rippleX),
+                    Math.max(rippleY, window.innerHeight - rippleY)
+                ) * 2.2;
+
+                const ripple = document.createElement('div');
+                ripple.style.position = 'fixed';
+                ripple.style.left = `${rippleX}px`;
+                ripple.style.top = `${rippleY}px`;
+                ripple.style.width = '10px';
+                ripple.style.height = '10px';
+                ripple.style.marginLeft = '-5px';
+                ripple.style.marginTop = '-5px';
+                ripple.style.borderRadius = '50%';
+                ripple.style.pointerEvents = 'none';
+                ripple.style.zIndex = '99999';
+                ripple.style.background = nextTheme === 'light' 
+                    ? 'radial-gradient(circle, rgba(241,245,249,0.95) 0%, rgba(226,232,240,0.85) 100%)' 
+                    : 'radial-gradient(circle, rgba(11,15,25,0.98) 0%, rgba(15,23,42,0.95) 100%)';
+                ripple.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease';
+                ripple.style.transform = 'scale(1)';
+                document.body.appendChild(ripple);
+
+                requestAnimationFrame(() => {
+                    const scaleFactor = (maxDist / 10) * 1.2;
+                    ripple.style.transform = `scale(${scaleFactor})`;
+                    
+                    setTimeout(() => {
+                        document.documentElement.setAttribute('data-theme', nextTheme);
+                        localStorage.setItem('bank_app_theme', nextTheme);
+                    }, 180);
+
+                    setTimeout(() => {
+                        ripple.style.opacity = '0';
+                        setTimeout(() => ripple.remove(), 400);
+                    }, 380);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
