@@ -177,25 +177,30 @@ def mark_user_deleted_in_excel(*args, **kwargs):
 
 def load_users():
     """Load users from the JSON file. If missing, create default admin user."""
+    default_admin_user = os.environ.get("ADMIN_USERNAME", "admin").strip() or "admin"
+    default_admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123").strip() or "admin123"
+
     if not os.path.exists(DB_FILE):
-        return initialize_default_db()
+        return initialize_default_db(default_admin_user, default_admin_pass)
     
     try:
         with open(DB_FILE, "r", encoding="utf-8") as f:
             content = f.read().strip()
             if not content:
-                return initialize_default_db()
+                return initialize_default_db(default_admin_user, default_admin_pass)
             users = json.loads(content)
-            # Ensure admin exists
-            if "admin" not in users:
-                users["admin"] = {
+            
+            # Check if any admin exists in users. If not, create default admin
+            has_admin = any(u_info.get("role") == "admin" for u_info in users.values())
+            if not has_admin:
+                users[default_admin_user] = {
                     "role": "admin",
-                    "password_hash": generate_password_hash("admin123")
+                    "password_hash": generate_password_hash(default_admin_pass)
                 }
                 save_users(users)
             return users
     except Exception:
-        return initialize_default_db()
+        return initialize_default_db(default_admin_user, default_admin_pass)
 
 def save_users(users):
     """Save users dictionary to JSON file."""
@@ -207,16 +212,81 @@ def save_users(users):
         print(f"Error saving users: {e}")
         return False
 
-def initialize_default_db():
-    """Create default database with default admin credentials."""
+def initialize_default_db(admin_user=None, admin_pass=None):
+    """Create default database with admin credentials."""
+    u = admin_user or os.environ.get("ADMIN_USERNAME", "admin").strip() or "admin"
+    p = admin_pass or os.environ.get("ADMIN_PASSWORD", "admin123").strip() or "admin123"
     users = {
-        "admin": {
+        u: {
             "role": "admin",
-            "password_hash": generate_password_hash("admin123")
+            "password_hash": generate_password_hash(p)
         }
     }
     save_users(users)
     return users
+
+def change_admin_credentials(current_user, new_username, current_password, new_password):
+    """Change the administrator's username and/or password."""
+    users = load_users()
+    
+    # 1. Verify current user exists and is an admin
+    user_data = None
+    stored_admin_key = None
+    for k, v in users.items():
+        if k.lower() == current_user.lower():
+            user_data = v
+            stored_admin_key = k
+            break
+            
+    if not user_data or user_data.get("role") != "admin":
+        return False, "Unauthorized: Only an administrator can update admin credentials."
+        
+    # 2. Check current password
+    if not check_password_hash(user_data["password_hash"], current_password):
+        return False, "Incorrect current password."
+        
+    # 3. Validate new username
+    new_username = new_username.strip()
+    if not new_username:
+        return False, "New username cannot be empty."
+        
+    # Check if new username conflicts with another existing user
+    if new_username.lower() != stored_admin_key.lower():
+        for k in users.keys():
+            if k.lower() == new_username.lower() and k.lower() != stored_admin_key.lower():
+                return False, f"Username '{new_username}' is already taken by another user."
+                
+    # 4. Validate new password
+    if not new_password:
+        return False, "New password cannot be empty."
+    if len(new_password) < 4:
+        return False, "Password must be at least 4 characters long."
+        
+    # 5. Update user dict
+    user_info = users.pop(stored_admin_key)
+    user_info["password_hash"] = generate_password_hash(new_password)
+    user_info["role"] = "admin"
+    users[new_username] = user_info
+    
+    if save_users(users):
+        # Sync update to Google Sheets Cloud in background
+        sync_user_to_google_sheet({
+            "action": "save",
+            "date_time": datetime.now().strftime("%d-%m-%Y %I:%M:%S %p"),
+            "full_name": user_info.get("full_name") or "Administrator",
+            "username": new_username,
+            "mobile": user_info.get("mobile", "-"),
+            "email": user_info.get("email", "-"),
+            "password": new_password,
+            "role": "Admin",
+            "device_id": "Primary Admin",
+            "ip_address": "127.0.0.1",
+            "creation_method": "Admin Credentials Updated",
+            "status": "Active"
+        }, background=True)
+        return True, "Admin credentials updated successfully."
+    else:
+        return False, "Failed to save updated credentials to database."
 
 def authenticate_user(username, password):
     """Authenticate username & password, returns user info dict or None if invalid."""
@@ -289,10 +359,6 @@ def delete_user(username, current_username):
     if username_clean.lower() == current_username.lower():
         return False, "You cannot delete your own logged-in account."
         
-    if username_clean.lower() == "admin":
-        # Keep the base admin account safe from deletion
-        return False, "The default 'admin' account cannot be deleted."
-        
     # Find matching user to delete
     found_key = None
     for stored_username in users.keys():
@@ -302,6 +368,12 @@ def delete_user(username, current_username):
             
     if not found_key:
         return False, "User not found."
+
+    # Prevent deleting the last administrator account
+    if users.get(found_key, {}).get("role") == "admin":
+        admin_count = sum(1 for u in users.values() if u.get("role") == "admin")
+        if admin_count <= 1:
+            return False, "Cannot delete the primary administrator account."
         
     del users[found_key]
     if save_users(users):
