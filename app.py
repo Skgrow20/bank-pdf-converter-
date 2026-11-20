@@ -2,7 +2,6 @@ import io
 import os
 import re
 import html
-import requests
 from datetime import datetime
 from flask import Flask, request, render_template, send_file, jsonify, session, redirect, url_for, flash, abort, g
 import pandas as pd
@@ -743,6 +742,23 @@ def tally_config():
     current_url = get_tally_url()
     return jsonify({'tally_url': current_url})
 
+def send_tally_xml_request(tally_url, xml_data, timeout=8):
+    """Send XML request to Tally Prime using built-in urllib (no external requests dependency)."""
+    import urllib.request
+    import urllib.error
+    req = urllib.request.Request(
+        tally_url,
+        data=xml_data.encode('utf-8') if isinstance(xml_data, str) else xml_data,
+        headers={
+            'Content-Type': 'text/xml;charset=utf-8',
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'Mozilla/5.0'
+        },
+        method='POST'
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as response:
+        return response.getcode(), response.read().decode('utf-8', errors='ignore')
+
 @app.route('/tally_status', methods=['GET'])
 def tally_status():
     tally_url = get_tally_url()
@@ -774,14 +790,9 @@ def tally_status():
   </BODY>
 </ENVELOPE>"""
 
-    headers = {
-        'Content-Type': 'text/xml;charset=utf-8',
-        'ngrok-skip-browser-warning': 'true'
-    }
     try:
-        res = requests.post(tally_url, data=active_company_xml, headers=headers, timeout=4)
-        if res.status_code == 200:
-            res_text = res.text
+        code, res_text = send_tally_xml_request(tally_url, active_company_xml, timeout=5)
+        if code == 200:
             # Parse the company name from the response XML
             company_match = re.search(r'<COMPANY[^>]*>.*?<NAME[^>]*>(.*?)</NAME>.*?</COMPANY>', res_text, re.DOTALL)
             if not company_match:
@@ -793,11 +804,12 @@ def tally_status():
             else:
                 return jsonify({'connected': True, 'company': None, 'tally_url': tally_url})
         else:
-            return jsonify({'connected': False, 'tally_url': tally_url, 'error': f'Tally at {tally_url} returned status code {res.status_code}'})
-    except requests.exceptions.ConnectionError:
-        return jsonify({'connected': False, 'tally_url': tally_url, 'error': f'Could not connect to Tally Prime at {tally_url}. Please ensure Tally Prime is running with Port 9000 enabled.'})
+            return jsonify({'connected': False, 'tally_url': tally_url, 'error': f'Tally at {tally_url} returned status code {code}'})
     except Exception as e:
-        return jsonify({'connected': False, 'tally_url': tally_url, 'error': str(e)})
+        err_msg = str(e)
+        if 'Connection refused' in err_msg or 'WinError 10061' in err_msg:
+            err_msg = f'Could not connect to Tally Prime at {tally_url}. Please ensure Tally Prime is running with Port 9000 enabled.'
+        return jsonify({'connected': False, 'tally_url': tally_url, 'error': err_msg})
 
 
 @app.route('/tally_bank_ledgers', methods=['GET'])
@@ -831,14 +843,9 @@ def tally_bank_ledgers():
   </BODY>
 </ENVELOPE>"""
 
-    headers = {
-        'Content-Type': 'text/xml;charset=utf-8',
-        'ngrok-skip-browser-warning': 'true'
-    }
     try:
-        res = requests.post(tally_url, data=bank_ledgers_xml, headers=headers, timeout=5)
-        if res.status_code == 200:
-            res_text = res.text
+        code, res_text = send_tally_xml_request(tally_url, bank_ledgers_xml, timeout=6)
+        if code == 200:
             # Parse names using regex
             ledger_names = re.findall(r'<NAME[^>]*>(.*?)</NAME>', res_text)
             
@@ -850,9 +857,10 @@ def tally_bank_ledgers():
                     cleaned_names.append(name_clean)
             return jsonify({'success': True, 'ledgers': sorted(cleaned_names)})
         else:
-            return jsonify({'success': False, 'error': f'Tally returned status {res.status_code}'})
+            return jsonify({'success': False, 'error': f'Tally returned status {code}'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
 
 
 @app.route('/import_to_tally', methods=['POST'])
@@ -1020,8 +1028,7 @@ def import_to_tally():
 </ENVELOPE>"""
 
     try:
-        voucher_res = requests.post(tally_url, data=vouchers_xml.encode('utf-8'), headers=headers, timeout=90)
-        res_text = voucher_res.text
+        code, res_text = send_tally_xml_request(tally_url, vouchers_xml, timeout=90)
         created_match = re.search(r'<CREATED>(\d+)</CREATED>', res_text)
         errors_match = re.search(r'<ERRORS>(\d+)</ERRORS>', res_text)
         
