@@ -323,8 +323,17 @@ def parse_sbi(pdf_file_obj, lines):
             col_map = {}
             header_col_count = 0
             
+            table_settings = {
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "snap_y_tolerance": 4,
+                "intersection_tolerance": 3
+            }
             for page in pdf.pages:
-                tables = page.extract_tables()
+                try:
+                    tables = page.extract_tables(table_settings)
+                except Exception:
+                    tables = []
                 if not tables:
                     continue
                 for table in tables:
@@ -525,8 +534,17 @@ def parse_hdfc(pdf_file_obj, lines):
         if hasattr(pdf_file_obj, "seek"):
             pdf_file_obj.seek(0)
         with pdfplumber.open(pdf_file_obj) as pdf:
+            table_settings = {
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "snap_y_tolerance": 4,
+                "intersection_tolerance": 3
+            }
             for page in pdf.pages:
-                tables = page.extract_tables()
+                try:
+                    tables = page.extract_tables(table_settings)
+                except Exception:
+                    tables = []
                 if not tables:
                     continue
                 for table in tables:
@@ -1016,8 +1034,17 @@ def parse_boi(pdf_file_obj, lines):
             col_map = {}
             header_col_count = 0
             
+            table_settings = {
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "snap_y_tolerance": 4,
+                "intersection_tolerance": 3
+            }
             for page in pdf.pages:
-                tables = page.extract_tables()
+                try:
+                    tables = page.extract_tables(table_settings)
+                except Exception:
+                    tables = []
                 if not tables:
                     continue
                 for table in tables:
@@ -2556,8 +2583,17 @@ def parse_generic(pdf_file_obj, lines):
             col_map = {}
             header_col_count = 0
             
+            table_settings = {
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "snap_y_tolerance": 4,
+                "intersection_tolerance": 3
+            }
             for page in pdf.pages:
-                tables = page.extract_tables()
+                try:
+                    tables = page.extract_tables(table_settings)
+                except Exception:
+                    tables = []
                 for table in tables:
                     if not table or len(table) < 1:
                         continue
@@ -3042,29 +3078,6 @@ def process_pdf(pdf_path, stream_bytes=None, force_generic=False, enable_ocr=Tru
     else:
         bank_type = detect_bank_type(full_text[:2000])
         
-    try:
-        with open("debug_uploaded_pdf.txt", "w", encoding="utf-8") as f_dbg:
-            f_dbg.write(f"Filename: {filename}\n")
-            f_dbg.write(f"Detected Bank Type: {bank_type}\n")
-            f_dbg.write(f"Force Generic: {force_generic}\n")
-            f_dbg.write("--- EXTRACTED TABLES START ---\n")
-            if hasattr(pdf_file_obj, "seek"):
-                pdf_file_obj.seek(0)
-            with pdfplumber.open(pdf_file_obj) as pdf:
-                for idx, page in enumerate(pdf.pages):
-                    f_dbg.write(f"Page {idx+1} tables:\n")
-                    tables = page.extract_tables()
-                    for t_idx, table in enumerate(tables):
-                        f_dbg.write(f"  Table {t_idx+1} (columns: {len(table[0]) if table else 0}):\n")
-                        for r_idx, row in enumerate(table):
-                            f_dbg.write(f"    Row {r_idx+1}: {str(row)}\n")
-            f_dbg.write("--- EXTRACTED TABLES END ---\n")
-            f_dbg.write("--- EXTRACTED TEXT START ---\n")
-            f_dbg.write(full_text)
-            f_dbg.write("--- EXTRACTED TEXT END ---\n")
-    except Exception as e:
-        pass
-    
     parsers = {
         "KOTAK": parse_kotak,
         "IDFC": parse_idfc,

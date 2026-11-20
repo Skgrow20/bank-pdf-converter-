@@ -32,6 +32,26 @@ def get_preview_cache_id():
         session['preview_cache_id'] = cid
     return cid
 
+@app.errorhandler(500)
+def internal_error(e):
+    import traceback
+    tb = traceback.format_exc()
+    err_text = tb if tb and tb.strip() != "NoneType: None" else str(e)
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><title>SK Software - Diagnostic</title></head>
+    <body style="font-family: monospace; background: #0f172a; color: #f8fafc; padding: 30px;">
+        <h2 style="color: #ef4444;">Server Error Diagnostic (500)</h2>
+        <p style="color: #94a3b8;">An error occurred while handling this request:</p>
+        <pre style="background: #1e293b; padding: 20px; border-radius: 8px; color: #fca5a5; overflow-x: auto; font-size: 13px;">{err_text}</pre>
+        <br>
+        <a href="/" style="display: inline-block; padding: 10px 20px; background: #4f46e5; color: white; text-decoration: none; border-radius: 6px;">Return to Home</a>
+    </body>
+    </html>
+    """, 500
+
+
 
 
 @app.before_request
