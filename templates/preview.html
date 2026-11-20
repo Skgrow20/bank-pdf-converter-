@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transaction Preview - Bank Statement Converter</title>
+    <title>SK Software - Transaction Preview</title>
     <!-- Modern Premium Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2073,7 +2073,7 @@
 
     <!-- Header Navigation -->
     <header class="header">
-        <a href="/" class="header-logo">Bank PDF Converter</a>
+        <a href="/" class="header-logo">SK Software</a>
         <nav class="nav-items">
             <a href="/pdf_to_tally" class="btn-nav">📄 PDF to Tally</a>
             <a href="/excel_to_tally" class="btn-nav">📊 Excel to Tally</a>
@@ -3684,7 +3684,13 @@
             
             try {
                 const response = await fetch('/tally_status');
-                const data = await response.json();
+                const resText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(resText);
+                } catch(e) {
+                    data = { connected: false, error: "Server returned non-JSON response" };
+                }
                 
                 if (data.connected) {
                     if (data.company) {
@@ -3770,7 +3776,13 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ host, port })
                     });
-                    const data = await res.json();
+                    const resText = await res.text();
+                    let data;
+                    try {
+                        data = JSON.parse(resText);
+                    } catch (e) {
+                        throw new Error(res.ok ? "Invalid server response" : `Server error (${res.status})`);
+                    }
 
                     if (data.connected) {
                         tallyTestStatus.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -3813,7 +3825,9 @@
         async function fetchTallyBankLedgers() {
             try {
                 const response = await fetch('/tally_bank_ledgers');
-                const data = await response.json();
+                const resText = await response.text();
+                let data = {};
+                try { data = JSON.parse(resText); } catch(e) {}
                 if (data.success && data.ledgers) {
                     fetchedTallyLedgers = data.ledgers;
                 }
@@ -3821,6 +3835,7 @@
                 console.error("Failed to fetch Tally bank accounts list:", err);
             }
         }
+
 
         // Custom Combobox Dropdown handler
         function initCustomCombobox(comboboxEl) {
