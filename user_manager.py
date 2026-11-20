@@ -83,6 +83,13 @@ def _post_to_google_sheet(payload, target_url=None):
         )
         with urllib.request.urlopen(req, timeout=12) as response:
             code = response.getcode()
+            body_bytes = response.read()
+            try:
+                body_json = json.loads(body_bytes.decode('utf-8', errors='ignore'))
+                if body_json.get("status") == "error":
+                    return False, f"Google Apps Script Error: {body_json.get('message')}"
+            except Exception:
+                pass
             if code in [200, 302]:
                 return True, "Data successfully saved to Google Sheets cloud."
             return False, f"Google returned status code {code}"
