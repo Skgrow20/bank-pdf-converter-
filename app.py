@@ -1356,48 +1356,32 @@ def register():
         mobile = request.form.get('mobile', '').strip()
         email = request.form.get('email', '').strip()
         
-        # Validate that SMTP email configuration is active before allowing registration
-        smtp_config = user_manager.load_email_config()
-        if not smtp_config.get("sender_email") or not smtp_config.get("admin_email"):
-            error = "Registration is currently disabled because the administrator has not configured SMTP settings. Please contact your administrator."
+        if not username:
+            error = "Username cannot be empty."
+        elif not password or len(password) < 4:
+            error = "Password must be at least 4 characters long."
         else:
-            import random
-            otp = random.randint(100000, 999999)
-            
-            # Get current device ID (e.g. BIOS-XXXXXX or DEV-XXXXXX)
+            # Capture device token and authorize immediately
             device_token = getattr(g, 'device_token', None)
-            device_id = device_manager.get_device_id(device_token) or "Unknown Device"
+            device_id = device_manager.get_device_id(device_token) or "Web Browser"
             ip_addr = request.remote_addr or "127.0.0.1"
             
-            success, msg = user_manager.add_pending_registration(
+            if device_token:
+                device_manager.authorize_device(device_token, name=f"{full_name or username} (PC)")
+                
+            success, msg = user_manager.add_user(
                 username=username, 
                 password=password, 
-                otp=otp,
-                full_name=full_name,
-                mobile=mobile,
-                email=email,
-                device_id=device_id,
+                role='operator', 
+                full_name=full_name, 
+                mobile=mobile, 
+                email=email, 
+                device_id=device_id, 
                 ip_address=ip_addr
             )
             if success:
-                # Send email containing the OTP and device info to the admin
-                email_ok, email_msg = user_manager.send_otp_email(
-                    username=username, 
-                    otp=otp, 
-                    device_id=device_id,
-                    full_name=full_name,
-                    mobile=mobile,
-                    email=email
-                )
-                if email_ok:
-                    return redirect(url_for('verify_otp', username=username))
-                else:
-                    # Rollback pending registration if email sending fails
-                    pending = user_manager.load_pending_registrations()
-                    if username.lower() in pending:
-                        del pending[username.lower()]
-                        user_manager.save_pending_registrations(pending)
-                    error = f"Failed to send registration OTP email: {email_msg}"
+                flash("Account created successfully! You can now log in.", "success")
+                return redirect(url_for('login'))
             else:
                 error = msg
                 
