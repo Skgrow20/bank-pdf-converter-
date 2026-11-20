@@ -1038,7 +1038,9 @@ def import_to_tally():
         if created is None or errors is None:
             err_line_match = re.search(r'<LINEERROR>(.*?)</LINEERROR>', res_text)
             if err_line_match:
-                return jsonify({'message': f'Tally Response: {err_line_match.group(1)}'})
+                return jsonify({'error': f'Tally Error: {err_line_match.group(1)}'}), 422
+            clean_res = re.sub(r'<[^>]+>', ' ', res_text).strip()
+            return jsonify({'error': f'Tally Response: {clean_res or "Please open a Company in Tally Prime first."}'}), 422
                 
         if errors and errors > 0:
             return jsonify({
