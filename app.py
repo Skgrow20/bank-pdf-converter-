@@ -712,18 +712,24 @@ def tally_config():
         host = data.get('host', '').strip()
         port = str(data.get('port', '')).strip()
         if host:
-            if not port:
-                port = '9000'
-            host_clean = re.sub(r'^https?://', '', host).rstrip('/')
-            if ':' in host_clean:
-                tally_url = f"http://{host_clean}"
+            host_clean = host.strip()
+            if host_clean.startswith(('http://', 'https://')):
+                tally_url = host_clean.rstrip('/')
+            elif any(d in host_clean.lower() for d in ('ngrok', 'trycloudflare', 'localtunnel', '.app', '.io', '.me')) and ':' not in host_clean:
+                tally_url = f"https://{host_clean.rstrip('/')}"
             else:
-                tally_url = f"http://{host_clean}:{port}"
+                port_val = port if port else '9000'
+                clean_no_proto = re.sub(r'^https?://', '', host_clean).rstrip('/')
+                if ':' in clean_no_proto:
+                    tally_url = f"http://{clean_no_proto}"
+                else:
+                    tally_url = f"http://{clean_no_proto}:{port_val}"
         else:
             tally_url = data.get('tally_url', '').strip() or 'http://localhost:9000'
             
-        if not tally_url.startswith('http://') and not tally_url.startswith('https://'):
+        if not tally_url.startswith(('http://', 'https://')):
             tally_url = 'http://' + tally_url
+
             
         session['tally_url'] = tally_url
         try:
@@ -768,7 +774,10 @@ def tally_status():
   </BODY>
 </ENVELOPE>"""
 
-    headers = {'Content-Type': 'text/xml;charset=utf-8'}
+    headers = {
+        'Content-Type': 'text/xml;charset=utf-8',
+        'ngrok-skip-browser-warning': 'true'
+    }
     try:
         res = requests.post(tally_url, data=active_company_xml, headers=headers, timeout=4)
         if res.status_code == 200:
@@ -822,7 +831,10 @@ def tally_bank_ledgers():
   </BODY>
 </ENVELOPE>"""
 
-    headers = {'Content-Type': 'text/xml;charset=utf-8'}
+    headers = {
+        'Content-Type': 'text/xml;charset=utf-8',
+        'ngrok-skip-browser-warning': 'true'
+    }
     try:
         res = requests.post(tally_url, data=bank_ledgers_xml, headers=headers, timeout=5)
         if res.status_code == 200:
@@ -900,7 +912,10 @@ def import_to_tally():
     </BODY>
 </ENVELOPE>"""
 
-    headers = {'Content-Type': 'text/xml;charset=utf-8'}
+    headers = {
+        'Content-Type': 'text/xml;charset=utf-8',
+        'ngrok-skip-browser-warning': 'true'
+    }
     try:
         requests.post(tally_url, data=ledgers_xml, headers=headers, timeout=5)
     except requests.exceptions.ConnectionError:
