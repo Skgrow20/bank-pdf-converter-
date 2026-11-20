@@ -925,13 +925,10 @@ def import_to_tally():
         'ngrok-skip-browser-warning': 'true'
     }
     try:
-        requests.post(tally_url, data=ledgers_xml, headers=headers, timeout=5)
-    except requests.exceptions.ConnectionError:
-        return jsonify({
-            'error': 'Could not connect to Tally Prime. Please make sure Tally Prime is running and Client/Server configuration acts as Both/Server on Port 9000.'
-        }), 503
+        send_tally_xml_request(tally_url, ledgers_xml, timeout=10)
     except Exception as e:
         return jsonify({'error': f'Failed to send masters to Tally: {str(e)}'}), 500
+
 
     # Build Vouchers XML
     voucher_entries = []
