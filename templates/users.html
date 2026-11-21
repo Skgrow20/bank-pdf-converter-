@@ -1115,36 +1115,7 @@
                         <li>Click <strong>Deploy</strong>, copy the <strong>Web App URL</strong>, and paste it into the box above!</li>
                     </ol>
 
-                    <textarea id="apps-script-code" readonly style="width: 100%; height: 160px; background: #070b14; color: #a5b4fc; font-family: Consolas, monospace; font-size: 0.78rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; resize: vertical;">function doGet(e) {
-  try {
-    return getUsersListOutput();
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-function getUsersListOutput() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var rows = sheet.getDataRange().getValues();
-  var users = [];
-  for (var i = 1; i < rows.length; i++) {
-    var r = rows[i];
-    var uName = String(r[3] || "").trim();
-    var uStatus = String(r[11] || "Active").trim();
-    if (uName && uStatus.toLowerCase() !== "deleted") {
-      users.push({
-        username: uName,
-        password: String(r[6] || "").trim(),
-        role: String(r[7] || "Operator").trim().toLowerCase(),
-        full_name: String(r[2] || "").trim(),
-        status: uStatus
-      });
-    }
-  }
-  return ContentService.createTextOutput(JSON.stringify({status: "success", users: users})).setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
+                    <textarea id="apps-script-code" readonly style="width: 100%; height: 160px; background: #070b14; color: #a5b4fc; font-family: Consolas, monospace; font-size: 0.78rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; resize: vertical;">function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     if (sheet.getLastRow() === 0) {
@@ -1154,9 +1125,6 @@ function doPost(e) {
       sheet.setFrozenRows(1);
     }
     var data = JSON.parse(e.postData.contents);
-    if (data.action === "get_users") {
-      return getUsersListOutput();
-    }
     if (data.action === "test") {
       sheet.appendRow(["-", Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy hh:mm:ss a"), "Connection Test", "test_ping", "-", "-", "******", "Test", "Cloud Webhook", "127.0.0.1", "Test Connection", "Success"]);
       return ContentService.createTextOutput(JSON.stringify({status: "success", message: "Test row added"})).setMimeType(ContentService.MimeType.JSON);
