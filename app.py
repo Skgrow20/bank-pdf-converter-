@@ -3,7 +3,7 @@ import os
 import re
 import html
 from datetime import datetime
-from flask import Flask, request, render_template, send_file, jsonify, session, redirect, url_for, flash, abort, g
+from flask import Flask, request, render_template, send_file, send_from_directory, jsonify, session, redirect, url_for, flash, abort, g
 import pandas as pd
 from bank_pdf_to_excel import process_pdf, generate_tally_voucher_df, format_tally_worksheet, format_worksheet, format_summary_worksheet, parse_excel_file
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -87,12 +87,12 @@ def check_auth_and_device():
     if not is_auth:
         device_manager.add_pending_request(token, request.remote_addr)
     
-    # Allow public access to Google verification, robots.txt, and static assets
-    if request.path.startswith('/google') or request.path in ['/robots.txt', '/favicon.ico']:
+    # Allow public access to Google verification, robots.txt, bank formats, and static assets
+    if request.path.startswith('/google') or request.path.startswith('/bank_formats') or request.path in ['/robots.txt', '/favicon.ico']:
         return None
 
-    # Allow access to login, logout, unauthorized error page, register, verify_otp, and static assets
-    if request.endpoint in ['login', 'logout', 'device_unauthorized', 'static', 'register', 'verify_otp', 'robots_txt', 'google_verification_file'] or not request.endpoint:
+    # Allow access to home, serve_bank_format, login, logout, unauthorized error page, register, verify_otp, and static assets
+    if request.endpoint in ['home', 'serve_bank_format', 'login', 'logout', 'device_unauthorized', 'static', 'register', 'verify_otp', 'robots_txt', 'google_verification_file'] or not request.endpoint:
         return None
         
     if not is_auth:
@@ -122,8 +122,57 @@ def inject_user():
 
 
 @app.route('/')
-def index():
+def home():
+    is_logged_in = ('username' in session)
+    return render_template('home.html', is_logged_in=is_logged_in)
+
+
+@app.route('/dashboard')
+def dashboard():
     return render_template('dashboard.html')
+
+
+@app.route('/index')
+def index():
+    return redirect(url_for('dashboard'))
+
+
+@app.route('/bank_formats/<path:filename>')
+def serve_bank_format(filename):
+    static_formats_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'bank_formats')
+    images_dir = os.path.join(static_formats_dir, 'images')
+    pdf_dir = os.path.join(static_formats_dir, 'pdf')
+    original_pdf_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Bank Format pdf')
+
+    clean_name = os.path.basename(filename)
+    # 1. If explicit subpath in request
+    if filename.startswith('images/'):
+        return send_from_directory(images_dir, filename[7:])
+    if filename.startswith('pdf/'):
+        return send_from_directory(pdf_dir, filename[4:])
+
+    # 2. Check if asking for image
+    if clean_name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+        if os.path.exists(os.path.join(images_dir, clean_name)):
+            return send_from_directory(images_dir, clean_name)
+
+    # 3. Check 1-page redacted PDF first
+    if clean_name.lower().endswith('.pdf'):
+        if os.path.exists(os.path.join(pdf_dir, clean_name)):
+            return send_from_directory(pdf_dir, clean_name)
+        # Check case-insensitive
+        for f in os.listdir(pdf_dir) if os.path.exists(pdf_dir) else []:
+            if f.lower() == clean_name.lower():
+                return send_from_directory(pdf_dir, f)
+
+    # 4. Fallback to original Bank Format pdf directory
+    if os.path.exists(os.path.join(original_pdf_dir, clean_name)):
+        return send_from_directory(original_pdf_dir, clean_name)
+    for f in os.listdir(original_pdf_dir) if os.path.exists(original_pdf_dir) else []:
+        if f.lower() == clean_name.lower():
+            return send_from_directory(original_pdf_dir, f)
+
+    abort(404)
 
 
 @app.route('/pdf_to_tally')
@@ -1054,7 +1103,7 @@ def import_to_tally():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'username' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
         
     error = None
     if request.method == 'POST':
@@ -1076,7 +1125,7 @@ def login():
                     
                 session['username'] = user['username']
                 session['role'] = user['role']
-                return redirect(url_for('index'))
+                return redirect(url_for('dashboard'))
         else:
             error = "Invalid username or password."
             
@@ -1346,7 +1395,7 @@ def update_google_sheets_config():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if 'username' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
         
     error = None
     if request.method == 'POST':
@@ -1419,7 +1468,7 @@ def register():
 @app.route('/verify_otp', methods=['GET', 'POST'])
 def verify_otp():
     if 'username' in session:
-        return redirect(url_for('index'))
+        return redirect(url_for('dashboard'))
         
     username = request.args.get('username', '').strip()
     if not username:
