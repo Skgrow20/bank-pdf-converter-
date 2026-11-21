@@ -295,80 +295,19 @@ def change_admin_credentials(current_user, new_username, current_password, new_p
     else:
         return False, "Failed to save updated credentials to database."
 
-def fetch_user_from_google_sheets(username_lower, password):
-    """Query Google Sheets Cloud Webhook to authenticate user directly against cloud sheet."""
-    config = load_gsheet_config()
-    webhook_url = config.get("webhook_url", "").strip()
-    if not webhook_url:
-        return None
-        
-    try:
-        payload = json.dumps({"action": "get_users"}).encode('utf-8')
-        req = urllib.request.Request(
-            webhook_url,
-            data=payload,
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-            },
-            method='POST'
-        )
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            body = json.loads(resp.read().decode('utf-8', errors='ignore'))
-            if body.get("status") == "success" and "users" in body:
-                for u in body.get("users", []):
-                    u_name = str(u.get("username", "")).strip().lower()
-                    u_pass = str(u.get("password", "")).strip()
-                    u_role = str(u.get("role", "operator")).strip().lower()
-                    u_status = str(u.get("status", "Active")).strip().lower()
-                    if u_name == username_lower and u_status != "deleted":
-                        if u_pass == password or (len(u_pass) > 20 and check_password_hash(u_pass, password)):
-                            return {
-                                "username": u.get("username") or u_name,
-                                "role": u_role or "operator",
-                                "full_name": u.get("full_name", "")
-                            }
-    except Exception as e:
-        print(f"Error fetching users from Google Sheets: {e}")
-        
-    return None
-
 def authenticate_user(username, password):
     """Authenticate username & password, returns user info dict or None if invalid."""
     users = load_users()
     username_lower = username.lower().strip()
     
-    # 1. Check local users database
+    # Check case-insensitive match for security and ease of use, but store keys as lower
     for stored_username, data in users.items():
         if stored_username.lower() == username_lower:
-            stored_hash = data.get("password_hash")
-            if stored_hash and check_password_hash(stored_hash, password):
+            if check_password_hash(data["password_hash"], password):
                 return {
                     "username": stored_username,
                     "role": data.get("role", "viewer")
                 }
-            stored_plain = data.get("plain_password")
-            if stored_plain and stored_plain == password:
-                data["password_hash"] = generate_password_hash(password)
-                data.pop("plain_password", None)
-                save_users(users)
-                return {
-                    "username": stored_username,
-                    "role": data.get("role", "viewer")
-                }
-                
-    # 2. Check Google Sheets Cloud Webhook if not found locally or password changed in Sheet
-    cloud_user = fetch_user_from_google_sheets(username_lower, password)
-    if cloud_user:
-        users[cloud_user["username"]] = {
-            "role": cloud_user["role"],
-            "password_hash": generate_password_hash(password),
-            "full_name": cloud_user.get("full_name", ""),
-            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        save_users(users)
-        return cloud_user
-        
     return None
 
 def add_user(username, password, role, full_name="", mobile="", email="", device_id="", ip_address=""):
@@ -570,34 +509,30 @@ def verify_otp_and_activate(username, input_otp, fallback_data=None):
     username_lower = username_clean.lower()
     input_otp_str = str(input_otp).strip()
     
-    # 1. Get pending registration data from file, or fallback from session
+    # 1. Check if user is already an active user in the database
+    users = load_users()
+    for stored_u in users.keys():
+        if stored_u.lower() == username_lower:
+            return True, f"Account '{stored_u}' is already activated! You can now sign in."
+            
+    # 2. Get pending registration data from file, or fallback from session
     reg_data = pending.get(username_lower)
     if not reg_data and fallback_data:
         fb_user = fallback_data.get("username", "").strip().lower()
         if fb_user == username_lower:
             reg_data = fallback_data
             
-    # If no pending registration at all, check if user is already an active user in the database
     if not reg_data:
-        users = load_users()
-        for stored_u in users.keys():
-            if stored_u.lower() == username_lower:
-                return True, f"Account '{stored_u}' is already activated! You can now sign in."
         return False, f"No pending registration found for '{username_clean}'. It may have expired or server restarted. Please register again."
         
     if str(reg_data.get("otp", "")).strip() != input_otp_str:
         return False, "Invalid verification code. Please check the 6-digit OTP code."
         
-    # Valid OTP - Create or update user account with verified credentials
+    # Valid OTP - Create user account
     actual_username = reg_data.get("username") or username_clean
-    new_hash = reg_data.get("password_hash")
-    if not new_hash and reg_data.get("plain_password"):
-        new_hash = generate_password_hash(reg_data["plain_password"])
-        
-    users = load_users()
     users[actual_username] = {
         "role": "operator",
-        "password_hash": new_hash or generate_password_hash("1234"),
+        "password_hash": reg_data.get("password_hash") or generate_password_hash(reg_data.get("plain_password", "1234")),
         "full_name": reg_data.get("full_name", ""),
         "mobile": reg_data.get("mobile", ""),
         "email": reg_data.get("email", ""),

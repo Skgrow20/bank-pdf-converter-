@@ -5,11 +5,7 @@
     },
     "shyam": {
         "role": "operator",
-        "plain_password": "ssss",
-        "full_name": "SK Growth",
-        "mobile": "9227092091",
-        "email": "skgrowth1320@gmail.com",
-        "created_at": "2026-11-21 04:12:21"
+        "password_hash": "scrypt:32768:8:1$BeRKqMG3bX7FbAsJ$c3226f0e50c401d24accd34444cf1ef1f96c1fc28aae951ae2d76b6bca0721f7640462c7da753f4ca5a5968e77408fd65869783975739bb55ca814d0ebff677b"
     },
     "ss": {
         "role": "operator",
