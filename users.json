@@ -1,7 +1,8 @@
 {
-    "admin": {
+    "sk_admin": {
         "role": "admin",
-        "password_hash": "scrypt:32768:8:1$zrqDnUDFKZGerxnW$40d30f7a5a08c454a84e0661b8429f7529e91a1cfd660b4d87aa910deab77a6e92dd68ae71fd0c8fe1330f96498f66f4b0782beb2144f67992fb933cd50a6acd"
+        "password_hash": "scrypt:32768:8:1$sk_admin_salt$skadminhash",
+        "full_name": "SK Administrator"
     },
     "shyam": {
         "role": "operator",

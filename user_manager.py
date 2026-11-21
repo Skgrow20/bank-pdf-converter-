@@ -183,9 +183,9 @@ def mark_user_deleted_in_excel(*args, **kwargs):
     pass
 
 def load_users():
-    """Load users from the JSON file. If missing, create default admin user."""
-    default_admin_user = os.environ.get("ADMIN_USERNAME", "admin").strip() or "admin"
-    default_admin_pass = os.environ.get("ADMIN_PASSWORD", "admin123").strip() or "admin123"
+    """Load users from the JSON file. Always ensures sk_admin is registered and removes old default admin."""
+    default_admin_user = os.environ.get("ADMIN_USERNAME", "sk_admin").strip() or "sk_admin"
+    default_admin_pass = os.environ.get("ADMIN_PASSWORD", "Skrupa@2013").strip() or "Skrupa@2013"
 
     if not os.path.exists(DB_FILE):
         return initialize_default_db(default_admin_user, default_admin_pass)
@@ -197,14 +197,27 @@ def load_users():
                 return initialize_default_db(default_admin_user, default_admin_pass)
             users = json.loads(content)
             
-            # Check if any admin exists in users. If not, create default admin
-            has_admin = any(u_info.get("role") == "admin" for u_info in users.values())
-            if not has_admin:
+            # Remove legacy default 'admin' account if present
+            if "admin" in users and default_admin_user.lower() != "admin":
+                del users["admin"]
+                save_users(users)
+            
+            # Always ensure sk_admin exists with the updated password hash
+            admin_user_lower = default_admin_user.lower()
+            existing_admin_key = next((k for k in users.keys() if k.lower() == admin_user_lower), None)
+            
+            if not existing_admin_key:
                 users[default_admin_user] = {
                     "role": "admin",
-                    "password_hash": generate_password_hash(default_admin_pass)
+                    "password_hash": generate_password_hash(default_admin_pass),
+                    "full_name": "SK Administrator"
                 }
                 save_users(users)
+            else:
+                users[existing_admin_key]["role"] = "admin"
+                users[existing_admin_key]["password_hash"] = generate_password_hash(default_admin_pass)
+                save_users(users)
+                
             return users
     except Exception:
         return initialize_default_db(default_admin_user, default_admin_pass)
@@ -220,10 +233,18 @@ def save_users(users):
         return False
 
 def initialize_default_db(admin_user=None, admin_pass=None):
-    """Create default database with admin credentials."""
-    u = admin_user or os.environ.get("ADMIN_USERNAME", "admin").strip() or "admin"
-    p = admin_pass or os.environ.get("ADMIN_PASSWORD", "admin123").strip() or "admin123"
+    """Create default database with sk_admin credentials."""
+    u = admin_user or os.environ.get("ADMIN_USERNAME", "sk_admin").strip() or "sk_admin"
+    p = admin_pass or os.environ.get("ADMIN_PASSWORD", "Skrupa@2013").strip() or "Skrupa@2013"
     users = {
+        u: {
+            "role": "admin",
+            "password_hash": generate_password_hash(p),
+            "full_name": "SK Administrator"
+        }
+    }
+    save_users(users)
+    return users
         u: {
             "role": "admin",
             "password_hash": generate_password_hash(p)
@@ -297,13 +318,33 @@ def change_admin_credentials(current_user, new_username, current_password, new_p
 
 def authenticate_user(username, password):
     """Authenticate username & password, returns user info dict or None if invalid."""
-    users = load_users()
-    username_lower = username.lower().strip()
+    username_clean = (username or "").strip()
+    password_clean = password or ""
+    if not username_clean or not password_clean:
+        return None
+
+    username_lower = username_clean.lower()
     
-    # Check case-insensitive match for security and ease of use, but store keys as lower
+    # 1. Explicitly block legacy 'admin' account
+    if username_lower == "admin":
+        return None
+    
+    # 2. Master Administrator authentication for sk_admin
+    env_admin_user = os.environ.get("ADMIN_USERNAME", "sk_admin").strip() or "sk_admin"
+    env_admin_pass = os.environ.get("ADMIN_PASSWORD", "Skrupa@2013").strip() or "Skrupa@2013"
+    
+    if username_lower in ["sk_admin", env_admin_user.lower()]:
+        if password_clean == env_admin_pass or password_clean in ["Skrupa@2013", "Skrupat@2013"]:
+            return {
+                "username": "sk_admin",
+                "role": "admin"
+            }
+
+    # 3. Database lookup in users.json
+    users = load_users()
     for stored_username, data in users.items():
         if stored_username.lower() == username_lower:
-            if check_password_hash(data["password_hash"], password):
+            if check_password_hash(data["password_hash"], password_clean):
                 return {
                     "username": stored_username,
                     "role": data.get("role", "viewer")
@@ -502,37 +543,24 @@ def add_pending_registration(username, password, otp, full_name="", mobile="", e
     else:
         return False, "Failed to save pending registration details."
 
-def verify_otp_and_activate(username, input_otp, fallback_data=None):
-    """Check OTP and activate pending registration account as Operator, saving details to Google Sheets Cloud."""
+def verify_otp_and_activate(username, input_otp):
+    """Check OTP and activate pending registration account as Operator, saving details to Excel."""
     pending = load_pending_registrations()
-    username_clean = username.strip()
-    username_lower = username_clean.lower()
+    username_lower = username.strip().lower()
     input_otp_str = str(input_otp).strip()
     
-    # 1. Check if user is already an active user in the database
-    users = load_users()
-    for stored_u in users.keys():
-        if stored_u.lower() == username_lower:
-            return True, f"Account '{stored_u}' is already activated! You can now sign in."
-            
-    # 2. Get pending registration data from file, or fallback from session
-    reg_data = pending.get(username_lower)
-    if not reg_data and fallback_data:
-        fb_user = fallback_data.get("username", "").strip().lower()
-        if fb_user == username_lower:
-            reg_data = fallback_data
-            
-    if not reg_data:
-        return False, f"No pending registration found for '{username_clean}'. It may have expired or server restarted. Please register again."
+    if username_lower not in pending:
+        return False, "No pending registration found for this user."
         
-    if str(reg_data.get("otp", "")).strip() != input_otp_str:
-        return False, "Invalid verification code. Please check the 6-digit OTP code."
+    reg_data = pending[username_lower]
+    if reg_data["otp"] != input_otp_str:
+        return False, "Invalid verification code. Please check the OTP sent to the administrator's email."
         
     # Valid OTP - Create user account
-    actual_username = reg_data.get("username") or username_clean
-    users[actual_username] = {
+    users = load_users()
+    users[reg_data["username"]] = {
         "role": "operator",
-        "password_hash": reg_data.get("password_hash") or generate_password_hash(reg_data.get("plain_password", "1234")),
+        "password_hash": reg_data["password_hash"],
         "full_name": reg_data.get("full_name", ""),
         "mobile": reg_data.get("mobile", ""),
         "email": reg_data.get("email", ""),
@@ -543,11 +571,12 @@ def verify_otp_and_activate(username, input_otp, fallback_data=None):
         return False, "Failed to save user database."
         
     # Directly sync new user registration to Google Sheets Cloud in real-time
+    reg_username = reg_data["username"]
     sync_user_to_google_sheet({
         "action": "save",
         "date_time": datetime.now().strftime("%d-%m-%Y %I:%M:%S %p"),
-        "full_name": reg_data.get("full_name") or actual_username.capitalize(),
-        "username": actual_username,
+        "full_name": reg_data.get("full_name") or reg_username.capitalize(),
+        "username": reg_username,
         "mobile": reg_data.get("mobile") or "-",
         "email": reg_data.get("email") or "-",
         "password": reg_data.get("plain_password") or "******",
@@ -558,10 +587,9 @@ def verify_otp_and_activate(username, input_otp, fallback_data=None):
         "status": "Active"
     }, background=True)
         
-    # Clean up pending entry from file
-    if username_lower in pending:
-        del pending[username_lower]
-        save_pending_registrations(pending)
+    # Clean up pending entry
+    del pending[username_lower]
+    save_pending_registrations(pending)
     
     return True, "User account created and activated successfully! You can now sign in."
 
