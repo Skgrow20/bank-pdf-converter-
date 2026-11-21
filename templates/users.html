@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User & Device Management - Bank Statement Converter</title>
+    <title>SK Software - User & Device Management</title>
     <!-- Modern Premium Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -738,7 +738,7 @@
 
     <!-- Header Navigation -->
     <header class="header">
-        <a href="/" class="header-logo">Bank PDF Converter</a>
+        <a href="/" class="header-logo">SK Software</a>
         <nav class="nav-items">
             <a href="/pdf_to_tally" class="btn-nav">📄 PDF to Tally</a>
             <a href="/excel_to_tally" class="btn-nav">📊 Excel to Tally</a>
@@ -793,45 +793,80 @@
 
         <!-- ================= TAB 1: USER ACCOUNTS ================= -->
         <div id="users-tab-pane" class="tab-pane active-pane">
-            <!-- 1. Add User Form -->
-            <section class="panel">
-                <h2>Add New User</h2>
-                <form action="/users/add" method="POST">
-                    <div class="form-group">
-                        <label for="full_name">Full Name (Optional)</label>
-                        <input type="text" id="full_name" name="full_name" placeholder="e.g. Rahul Sharma" autocomplete="off">
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Left Column: Forms -->
+            <div style="display: flex; flex-direction: column; gap: 24px;">
+                <!-- 1. Add User Form -->
+                <section class="panel" style="width: 100%;">
+                    <h2>Add New User</h2>
+                    <form action="/users/add" method="POST">
                         <div class="form-group">
-                            <label for="mobile">Mobile No (Optional)</label>
-                            <input type="tel" id="mobile" name="mobile" placeholder="Mobile / Phone" autocomplete="off">
+                            <label for="full_name">Full Name (Optional)</label>
+                            <input type="text" id="full_name" name="full_name" placeholder="e.g. Rahul Sharma" autocomplete="off">
                         </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="form-group">
+                                <label for="mobile">Mobile No (Optional)</label>
+                                <input type="tel" id="mobile" name="mobile" placeholder="Mobile / Phone" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email (Optional)</label>
+                                <input type="email" id="email" name="email" placeholder="Email" autocomplete="off">
+                            </div>
+                        </div>
+
                         <div class="form-group">
-                            <label for="email">Email (Optional)</label>
-                            <input type="email" id="email" name="email" placeholder="Email" autocomplete="off">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" placeholder="Type username" required autocomplete="off">
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="username" placeholder="Type username" required autocomplete="off">
-                    </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" placeholder="Type password" required autocomplete="off">
+                        </div>
 
-                    <div class="form-group">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Type password" required autocomplete="off">
-                    </div>
+                        <div class="form-group">
+                            <label>Authority / Role</label>
+                            <input type="text" value="Operator (Parse, Edit, Import)" disabled style="background: rgba(255, 255, 255, 0.02); color: var(--text-muted); cursor: not-allowed;">
+                            <input type="hidden" name="role" value="operator">
+                        </div>
 
-                    <div class="form-group">
-                        <label>Authority / Role</label>
-                        <input type="text" value="Operator (Parse, Edit, Import)" disabled style="background: rgba(255, 255, 255, 0.02); color: var(--text-muted); cursor: not-allowed;">
-                        <input type="hidden" name="role" value="operator">
-                    </div>
+                        <button type="submit" class="btn-submit">Create User Account</button>
+                    </form>
+                </section>
 
-                    <button type="submit" class="btn-submit">Create User Account</button>
-                </form>
-            </section>
+                <!-- 2. Change Admin Credentials Form -->
+                <section class="panel" style="width: 100%;">
+                    <h2>🔑 Change Admin Login</h2>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
+                        Update the master Administrator username and password for this system.
+                    </p>
+                    <form action="/admin/change_credentials" method="POST">
+                        <div class="form-group">
+                            <label for="new_admin_username">Admin Username</label>
+                            <input type="text" id="new_admin_username" name="new_username" value="{{ session.get('username') }}" required autocomplete="off">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="current_admin_password">Current Password (Verification)</label>
+                            <input type="password" id="current_admin_password" name="current_password" placeholder="Current admin password" required autocomplete="off">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="form-group">
+                                <label for="new_admin_password">New Password</label>
+                                <input type="password" id="new_admin_password" name="new_password" placeholder="New password" required autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm_admin_password">Confirm Password</label>
+                                <input type="password" id="confirm_admin_password" name="confirm_password" placeholder="Confirm password" required autocomplete="off">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">Update Admin Login</button>
+                    </form>
+                </section>
+            </div>
 
             <!-- 2. Existing Users List -->
             <section class="panel" style="width: 100%;">
@@ -1080,7 +1115,36 @@
                         <li>Click <strong>Deploy</strong>, copy the <strong>Web App URL</strong>, and paste it into the box above!</li>
                     </ol>
 
-                    <textarea id="apps-script-code" readonly style="width: 100%; height: 160px; background: #070b14; color: #a5b4fc; font-family: Consolas, monospace; font-size: 0.78rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; resize: vertical;">function doPost(e) {
+                    <textarea id="apps-script-code" readonly style="width: 100%; height: 160px; background: #070b14; color: #a5b4fc; font-family: Consolas, monospace; font-size: 0.78rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 10px; resize: vertical;">function doGet(e) {
+  try {
+    return getUsersListOutput();
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function getUsersListOutput() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  var users = [];
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    var uName = String(r[3] || "").trim();
+    var uStatus = String(r[11] || "Active").trim();
+    if (uName && uStatus.toLowerCase() !== "deleted") {
+      users.push({
+        username: uName,
+        password: String(r[6] || "").trim(),
+        role: String(r[7] || "Operator").trim().toLowerCase(),
+        full_name: String(r[2] || "").trim(),
+        status: uStatus
+      });
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify({status: "success", users: users})).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     if (sheet.getLastRow() === 0) {
@@ -1090,9 +1154,25 @@
       sheet.setFrozenRows(1);
     }
     var data = JSON.parse(e.postData.contents);
+    if (data.action === "get_users") {
+      return getUsersListOutput();
+    }
     if (data.action === "test") {
       sheet.appendRow(["-", Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy hh:mm:ss a"), "Connection Test", "test_ping", "-", "-", "******", "Test", "Cloud Webhook", "127.0.0.1", "Test Connection", "Success"]);
       return ContentService.createTextOutput(JSON.stringify({status: "success", message: "Test row added"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (data.action === "send_otp") {
+      try {
+        MailApp.sendEmail({
+          to: data.to,
+          subject: data.subject,
+          body: data.body
+        });
+      } catch (mailErr) {
+        // Fallback: append OTP directly into sheet so Admin can view it immediately
+        sheet.appendRow(["-", Utilities.formatDate(new Date(), "GMT+5:30", "dd-MM-yyyy hh:mm:ss a"), "OTP ALERT: " + data.username, data.username, "-", "-", "OTP: " + data.otp, "Operator", "-", "-", "OTP Request", "OTP Code: " + data.otp]);
+      }
+      return ContentService.createTextOutput(JSON.stringify({status: "success", message: "OTP processed"})).setMimeType(ContentService.MimeType.JSON);
     }
     if (data.action === "delete") {
       var delUsername = (data.username || "").toLowerCase().trim();
