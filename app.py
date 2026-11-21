@@ -1361,27 +1361,43 @@ def register():
         elif not password or len(password) < 4:
             error = "Password must be at least 4 characters long."
         else:
-            # Capture device token and authorize immediately
+            import random
+            otp = random.randint(100000, 999999)
+            
+            # Capture device ID
             device_token = getattr(g, 'device_token', None)
-            device_id = device_manager.get_device_id(device_token) or "Web Browser"
+            device_id = device_manager.get_device_id(device_token) or "Web User"
             ip_addr = request.remote_addr or "127.0.0.1"
             
-            if device_token:
-                device_manager.authorize_device(device_token, name=f"{full_name or username} (PC)")
-                
-            success, msg = user_manager.add_user(
+            success, msg = user_manager.add_pending_registration(
                 username=username, 
                 password=password, 
-                role='operator', 
-                full_name=full_name, 
-                mobile=mobile, 
-                email=email, 
-                device_id=device_id, 
+                otp=otp,
+                full_name=full_name,
+                mobile=mobile,
+                email=email,
+                device_id=device_id,
                 ip_address=ip_addr
             )
             if success:
-                flash("Account created successfully! You can now log in.", "success")
-                return redirect(url_for('login'))
+                email_ok, email_msg = user_manager.send_otp_email(
+                    username=username, 
+                    otp=otp, 
+                    device_id=device_id,
+                    full_name=full_name,
+                    mobile=mobile,
+                    email=email
+                )
+                if email_ok:
+                    flash("Verification OTP sent! Check your email or Google Sheet for the code.", "info")
+                    return redirect(url_for('verify_otp', username=username))
+                else:
+                    # Rollback pending registration if email sending fails
+                    pending = user_manager.load_pending_registrations()
+                    if username.lower() in pending:
+                        del pending[username.lower()]
+                        user_manager.save_pending_registrations(pending)
+                    error = f"Failed to send OTP: {email_msg}"
             else:
                 error = msg
                 
@@ -1402,7 +1418,11 @@ def verify_otp():
         input_otp = request.form.get('otp', '').strip()
         success, msg = user_manager.verify_otp_and_activate(username, input_otp)
         if success:
-            flash("Registration completed! Details saved to Google Sheets cloud.", 'success')
+            # Auto-authorize this device so user is not blocked
+            device_token = getattr(g, 'device_token', None)
+            if device_token:
+                device_manager.authorize_device(device_token, name=f"{username} (Verified Device)")
+            flash("Account verified successfully! Details saved to Google Sheets cloud.", 'success')
             return redirect(url_for('login'))
         else:
             error = msg

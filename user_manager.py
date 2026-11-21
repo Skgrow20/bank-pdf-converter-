@@ -553,60 +553,57 @@ def verify_otp_and_activate(username, input_otp):
     return True, "User account created and activated successfully! You can now sign in."
 
 def send_otp_email(username, otp, device_id, full_name="", mobile="", email=""):
-    """Send generated OTP to administrator recipient email."""
+    """Send generated OTP to user's email and/or administrator recipient email."""
     import smtplib
     from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
 
     config = load_email_config()
-    server = config.get("smtp_server", "").strip()
+    server = config.get("smtp_server", "").strip() or "smtp.gmail.com"
     port_val = config.get("smtp_port", 587)
     sender = config.get("sender_email", "").strip()
     password = config.get("sender_password", "").strip()
-    receiver = config.get("admin_email", "").strip()
+    admin_recipient = config.get("admin_email", "").strip() or os.environ.get("ADMIN_EMAIL", "").strip()
+    
+    # Recipient(s): user's entered email and/or admin email
+    recipients = []
+    if email and email.strip():
+        recipients.append(email.strip())
+    if admin_recipient and admin_recipient not in recipients:
+        recipients.append(admin_recipient)
+        
+    target_email = ", ".join(recipients) if recipients else (admin_recipient or sender)
 
-    if not sender or not receiver:
-        return False, "SMTP configuration is incomplete. Sender or admin recipient email is not configured."
+    body = f"""Hello,
 
-    try:
-        port = int(port_val)
-    except ValueError:
-        port = 587
+Your One-Time Verification OTP Code is:
 
-    msg = MIMEMultipart()
-    msg['From'] = sender
-    msg['To'] = receiver
-    msg['Subject'] = f"Registration OTP Code for {username} ({full_name or 'New User'})"
+================================
+         {otp}
+================================
 
-    body = f"""Hello Administrator,
+Registration Details:
+• Username: {username}
+• Full Name: {full_name or 'N/A'}
+• Mobile: {mobile or 'N/A'}
+• Email: {email or 'N/A'}
+• Role: Operator (Parse, Edit, Import)
+• Device ID: {device_id}
 
-A user is attempting to create a new account on a client machine:
-
-Username: {username}
-Full Name: {full_name or 'N/A'}
-Mobile: {mobile or 'N/A'}
-Email: {email or 'N/A'}
-Authority Role: Operator (Parse, Edit, Import)
-Device ID (BIOS/Cookie): {device_id}
-
-One-Time Verification OTP Code: {otp}
-
-Please supply this OTP code to the user to authorize and activate their account.
-Upon verification, the user's details will be automatically saved to Google Sheets (Cloud).
+Enter this 6-digit OTP code on the verification screen to activate your account.
 
 Regards,
 Bank PDF Converter System
 """
-    msg.attach(MIMEText(body, 'plain'))
 
-    # 1. Try Google Apps Script Webhook first (HTTPS Port 443 - works on Render Free Tier!)
+    # 1. Try Google Apps Script Webhook first (HTTPS Port 443 - works on Render Free Tier where SMTP is blocked!)
     gsheet_config = load_gsheet_config()
     webhook_url = gsheet_config.get("webhook_url", "").strip()
     if webhook_url:
         ok, res_msg = _post_to_google_sheet({
             "action": "send_otp",
-            "to": receiver,
-            "subject": f"Registration OTP Code for {username} ({full_name or 'New User'})",
+            "to": target_email or "admin",
+            "subject": f"Registration OTP Code: {otp} for {username}",
             "body": body,
             "username": username,
             "otp": str(otp)
@@ -615,17 +612,34 @@ Bank PDF Converter System
             return True, "Email sent successfully via Google Cloud Webhook."
 
     # 2. Fallback to direct SMTP (for local PC or unblocked servers)
-    try:
-        if port == 465:
-            with smtplib.SMTP_SSL(server, port, timeout=5) as s:
-                s.login(sender, password)
-                s.sendmail(sender, receiver, msg.as_string())
-        else:
-            with smtplib.SMTP(server, port, timeout=5) as s:
-                s.starttls()
-                s.login(sender, password)
-                s.sendmail(sender, receiver, msg.as_string())
-        return True, "Email sent successfully."
-    except Exception as e:
-        return False, str(e)
+    if sender and password and target_email:
+        try:
+            port = int(port_val)
+        except ValueError:
+            port = 587
+
+        msg = MIMEMultipart()
+        msg['From'] = sender
+        msg['To'] = target_email
+        msg['Subject'] = f"Registration OTP Code: {otp} for {username} ({full_name or 'New User'})"
+        msg.attach(MIMEText(body, 'plain'))
+
+        try:
+            if port == 465:
+                with smtplib.SMTP_SSL(server, port, timeout=6) as s:
+                    s.login(sender, password)
+                    s.sendmail(sender, recipients or [target_email], msg.as_string())
+            else:
+                with smtplib.SMTP(server, port, timeout=6) as s:
+                    s.starttls()
+                    s.login(sender, password)
+                    s.sendmail(sender, recipients or [target_email], msg.as_string())
+            return True, "Email sent successfully via SMTP."
+        except Exception as e:
+            return False, f"SMTP Error: {e}"
+
+    if not webhook_url and not sender:
+        return False, "Neither Google Sheets Webhook nor SMTP is configured to send the OTP. Please configure your Google Sheets Webhook URL or SMTP settings in Admin."
+
+    return False, "Failed to send OTP email."
 
