@@ -1,0 +1,30 @@
+{
+    "admin": {
+        "role": "admin",
+        "password_hash": "scrypt:32768:8:1$zrqDnUDFKZGerxnW$40d30f7a5a08c454a84e0661b8429f7529e91a1cfd660b4d87aa910deab77a6e92dd68ae71fd0c8fe1330f96498f66f4b0782beb2144f67992fb933cd50a6acd"
+    },
+    "shyam": {
+        "role": "operator",
+        "plain_password": "ssss",
+        "full_name": "SK Growth",
+        "mobile": "9227092091",
+        "email": "skgrowth1320@gmail.com",
+        "created_at": "2026-11-21 04:12:21"
+    },
+    "ss": {
+        "role": "operator",
+        "password_hash": "scrypt:32768:8:1$kcdbET1GWzuQLE1F$a6e66072f9b19029342a669528094d7a7ef35e489a519e84e7b7c557636b35220f4fc0e76a21a4a2b69cc66f5ded53ce2934b905b6f06549acf1dc7f2411e4c2",
+        "full_name": "ss",
+        "mobile": "9173634733",
+        "email": "skgrowth1320@gmail.com",
+        "created_at": "2026-11-18 11:42:35"
+    },
+    "sh": {
+        "role": "operator",
+        "password_hash": "scrypt:32768:8:1$8WCatphz2ue75LrU$6a740c962aef118cb2690abe064a4b7603cb61e4ef4f55c3c3b87f43fce387dd444b88c13f05baf18e3093d525ecd644d294b9deb6f1cc4790829bb75b6be987",
+        "full_name": "shya",
+        "mobile": "91733333",
+        "email": "skgrowth1320@gmail.com",
+        "created_at": "2026-11-18 12:02:19"
+    }
+}
