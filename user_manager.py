@@ -245,13 +245,6 @@ def initialize_default_db(admin_user=None, admin_pass=None):
     }
     save_users(users)
     return users
-        u: {
-            "role": "admin",
-            "password_hash": generate_password_hash(p)
-        }
-    }
-    save_users(users)
-    return users
 
 def change_admin_credentials(current_user, new_username, current_password, new_password):
     """Change the administrator's username and/or password."""
