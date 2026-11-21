@@ -90,6 +90,67 @@
             100% { transform: translate(-20px, -50px) scale(0.92); }
         }
 
+        /* Back to Home Navigation */
+        .back-home-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-home-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--accent);
+            border-color: var(--accent);
+            transform: translateX(-3px);
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+        }
+
+        [data-theme="light"] .back-home-btn {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            color: #0f172a;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="light"] .back-home-btn:hover {
+            background: #f1f5f9;
+            color: #0369a1;
+            border-color: #0369a1;
+        }
+
+        [data-theme="light"] .back-link {
+            color: #334155;
+            font-weight: 600;
+        }
+
+        [data-theme="light"] .back-link:hover {
+            color: #0369a1;
+        }
+
         /* Glassmorphic Container */
         .login-container {
             width: 90%;
@@ -402,6 +463,17 @@
 </head>
 <body>
 
+    <!-- Top Left Back to Home Button -->
+    <div style="position: absolute; top: 20px; left: 24px; z-index: 100;">
+        <a href="/" class="back-home-btn" title="Back to Homepage">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Home</span>
+        </a>
+    </div>
+
     <!-- Top Right Animated Theme Switch -->
     <div style="position: absolute; top: 20px; right: 24px; z-index: 100;">
         <button class="theme-switch" id="theme-toggle-btn" title="Toggle Light / Dark Mode" aria-label="Toggle theme">
@@ -479,6 +551,12 @@
         <div style="margin-top: 20px; text-align: center; font-size: 0.85rem;">
             <span style="color: var(--text-muted);">Don't have an account?</span>
             <a href="/register" style="color: var(--accent); text-decoration: none; font-weight: 600; margin-left: 6px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--accent)'">Create Account</a>
+        </div>
+
+        <div style="margin-top: 14px; text-align: center; padding-top: 14px; border-top: 1px solid var(--card-border);">
+            <a href="/" class="back-link">
+                ← Back to Homepage
+            </a>
         </div>
     </div>
 
