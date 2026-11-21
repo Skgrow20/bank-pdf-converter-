@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SK Software - Bank Statement PDF to Excel & Tally Converter | Official Website</title>
+    <meta name="description" content="SK Software provides lightning-fast, high-precision bank statement PDF conversion into standardized Excel spreadsheets and direct 1-click XML import into Tally Prime.">
+    <meta name="keywords" content="SK Software, Bank Statement Converter, PDF to Excel, PDF to Tally, Tally Prime Voucher Import, Accounting Software">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Early Theme Detection -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('bank_app_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #080c14;
+            --card-bg: rgba(15, 23, 42, 0.65);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --accent: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.25);
+            --success: #10b981;
+            --whatsapp-green: #25d366;
+            --glass-bg: rgba(17, 24, 39, 0.7);
+            --nav-bg: rgba(8, 12, 20, 0.85);
+            --feature-hover: rgba(79, 70, 229, 0.12);
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-color: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4338ca;
+            --primary-hover: #3730a3;
+            --accent: #0284c7;
+            --accent-glow: rgba(2, 132, 199, 0.15);
+            --success: #059669;
+            --whatsapp-green: #128c7e;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --feature-hover: rgba(67, 56, 202, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Ambient Dynamic Glow Blobs */
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .glow-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.18;
+            animation: floatGlow 22s infinite alternate ease-in-out;
+        }
+
+        .blob-blue {
+            width: 600px;
+            height: 600px;
+            background: #4f46e5;
+            top: -150px;
+            left: -150px;
+        }
+
+        .blob-cyan {
+            width: 550px;
+            height: 550px;
+            background: #06b6d4;
+            bottom: 50px;
+            right: -100px;
+            animation-delay: -7s;
+        }
+
+        .blob-emerald {
+            width: 450px;
+            height: 450px;
+            background: #10b981;
+            top: 40%;
+            left: 55%;
+            animation-delay: -12s;
+            opacity: 0.12;
+        }
+
+        @keyframes floatGlow {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(60px, 40px) scale(1.1); }
+            100% { transform: translate(-40px, -60px) scale(0.95); }
+        }
+
+        /* Container */
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: var(--nav-bg);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 16px 0;
+            transition: all 0.3s ease;
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-color);
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            color: #fff;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 40%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        [data-theme="light"] .logo-text {
+            background: linear-gradient(135deg, #0f172a 40%, #0284c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            list-style: none;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--accent);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #312e81 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6366f1 0%, var(--primary) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(79, 70, 229, 0.5);
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            border: 1px solid var(--card-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-whatsapp {
+            background: rgba(37, 211, 102, 0.15);
+            border: 1.5px solid rgba(37, 211, 102, 0.4);
+            color: #25d366;
+            box-shadow: 0 4px 16px rgba(37, 211, 102, 0.18);
+        }
+
+        .btn-whatsapp:hover {
+            background: rgba(37, 211, 102, 0.25);
+            color: #25d366;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.3);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding-top: 140px;
+            padding-bottom: 24px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hero h1 {
+            font-size: 3.4rem;
+            font-weight: 800;
+            line-height: 1.18;
+            margin-bottom: 22px;
+            letter-spacing: -1.2px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 20%, #38bdf8 60%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        [data-theme="light"] .gradient-text {
+            background: linear-gradient(135deg, #0f172a 20%, #0284c7 60%, #4338ca 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p.lead {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 780px;
+            margin: 0 auto 36px auto;
+            font-weight: 400;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .hero-trust-bar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+            padding: 10px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .trust-item .icon {
+            color: var(--accent);
+            font-size: 1rem;
+        }
+
+        .trust-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--card-border);
+        }
+
+        /* Section Title */
+        .section-header {
+            text-align: center;
+            margin-bottom: 45px;
+        }
+
+        .section-tag {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .section-header h2 {
+            font-size: 2.3rem;
+            font-weight: 800;
+            letter-spacing: -0.6px;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 40px 0 70px 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 26px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 32px 28px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            backdrop-filter: blur(12px);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
+            background: var(--feature-hover);
+        }
+
+        .feature-icon-box {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            background: rgba(79, 70, 229, 0.12);
+            border: 1px solid rgba(79, 70, 229, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        /* Workflow Steps */
+        .workflow-section {
+            padding: 80px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--card-border);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            position: relative;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 36px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.35);
+        }
+
+        .step-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .step-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Supported Banks */
+        .banks-section {
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .banks-badge-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            max-width: 980px;
+            margin: 0 auto;
+        }
+
+        .bank-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .bank-badge:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            background: rgba(6, 182, 212, 0.12);
+            color: #38bdf8;
+            box-shadow: 0 6px 18px rgba(6, 182, 212, 0.25);
+        }
+
+        .bank-badge .badge-icon {
+            opacity: 0.7;
+            font-size: 0.85rem;
+            transition: opacity 0.2s;
+        }
+
+        .bank-badge:hover .badge-icon {
+            opacity: 1;
+        }
+
+        /* Bank Format Modal & Photo Viewer */
+        .bank-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: modalFadeIn 0.22s ease-out;
+        }
+
+        .bank-modal-card {
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 22px;
+            width: 100%;
+            max-width: 660px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            padding: 26px 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+            position: relative;
+        }
+
+        .bank-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+        }
+
+        .modal-body-scroll {
+            overflow-y: auto;
+            padding-right: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .format-item-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .format-item-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 8px 24px rgba(6, 182, 212, 0.12);
+        }
+
+        .format-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .format-card-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .format-privacy-badge {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--success);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .format-preview-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .format-thumb-wrapper {
+            width: 130px;
+            height: 90px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            position: relative;
+            flex-shrink: 0;
+            background: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .format-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            transition: transform 0.3s ease;
+        }
+
+        .format-thumb-wrapper:hover .format-thumb-img {
+            transform: scale(1.08);
+        }
+
+        .format-thumb-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 600;
+            gap: 4px;
+        }
+
+        .format-thumb-wrapper:hover .format-thumb-overlay {
+            opacity: 1;
+        }
+
+        .format-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-format-photo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(79, 70, 229, 0.2) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            color: #38bdf8;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-format-photo:hover {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.35) 0%, rgba(79, 70, 229, 0.35) 100%);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Terms & Conditions Modal Styling */
+        .terms-modal-card {
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 22px;
+            width: 100%;
+            max-width: 740px;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            padding: 26px 28px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            position: relative;
+        }
+
+        .terms-body-scroll {
+            overflow-y: auto;
+            padding-right: 12px;
+            margin: 16px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            font-size: 0.91rem;
+            line-height: 1.65;
+            color: var(--text-color);
+        }
+
+        .terms-alert-box {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1.5px solid rgba(239, 68, 68, 0.35);
+            border-radius: 14px;
+            padding: 16px 18px;
+            color: #fca5a5;
+        }
+
+        [data-theme="light"] .terms-alert-box {
+            background: rgba(239, 68, 68, 0.08);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #b91c1c;
+        }
+
+        .terms-section-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terms-lang-tab {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .terms-lang-tab:hover {
+            color: var(--text-color);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .terms-lang-tab.active {
+            background: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+            box-shadow: 0 2px 12px rgba(6, 182, 212, 0.35);
+        }
+
+        /* Lightbox Modal */
+        .lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(14px);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        .lightbox-content-card {
+            background: var(--bg-color);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+        }
+
+        .lightbox-header {
+            padding: 14px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--card-bg);
+        }
+
+        .lightbox-img-container {
+            overflow: auto;
+            max-height: 75vh;
+            text-align: center;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .lightbox-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* WhatsApp CTA Section */
+        .whatsapp-cta-section {
+            padding: 70px 0;
+        }
+
+        .whatsapp-cta-card {
+            background: linear-gradient(135deg, rgba(37, 211, 102, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1.5px solid rgba(37, 211, 102, 0.35);
+            border-radius: 24px;
+            padding: 45px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+            flex-wrap: wrap;
+        }
+
+        .whatsapp-cta-card h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #25d366;
+        }
+
+        .whatsapp-cta-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            max-width: 600px;
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--card-border);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .hero h1 { font-size: 2.5rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps-container { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .whatsapp-cta-card { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background Blobs -->
+    <div class="ambient-glow">
+        <div class="glow-blob blob-blue"></div>
+        <div class="glow-blob blob-cyan"></div>
+        <div class="glow-blob blob-emerald"></div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="container nav-content">
+            <a href="/" class="brand-logo">
+                <div class="logo-icon">SK</div>
+                <div class="logo-text">SK Software</div>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#how-it-works" class="nav-link">How It Works</a></li>
+                <li><a href="#banks" class="nav-link">Supported Banks</a></li>
+                <li><a href="#terms" onclick="openTermsModal(event)" class="nav-link">Terms & Conditions</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="theme-switch" id="theme-toggle-btn" title="Toggle Light / Dark Mode" aria-label="Toggle theme" style="background: none; border: none; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">
+                    <div style="width: 44px; height: 24px; border-radius: 20px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--card-border); position: relative; display: flex; align-items: center; justify-content: space-between; padding: 0 5px;">
+                        <span style="font-size: 11px;">☀️</span>
+                        <span style="font-size: 11px;">🌙</span>
+                        <div id="theme-thumb" style="position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); transition: transform 0.25s ease;"></div>
+                    </div>
+                </button>
+                {% if is_logged_in %}
+                    <a href="/dashboard" class="btn btn-primary">Dashboard →</a>
+                    <a href="/logout" class="btn btn-secondary">Sign Out</a>
+                {% else %}
+                    <a href="/login" class="btn btn-secondary">Sign In</a>
+                    <a href="/register" class="btn btn-primary">Create Account</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Hero Section -->
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-badge" style="background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
+                    🎉 Limited-Time Free Trial Active &bull; Paid Features Coming in Future
+                </div>
+                
+                <h1>
+                    Bank Statement PDF to Excel<br>
+                    <span class="gradient-text">& Tally Prime Converter</span>
+                </h1>
+
+                <p class="lead">
+                    Automate bank reconciliations in seconds. Convert password-protected, multi-page PDFs from Indian banks into clean Excel worksheets or push directly into Tally Prime with 1-click XML integration.
+                </p>
+
+                <div class="hero-cta-group">
+                    {% if is_logged_in %}
+                        <a href="/dashboard" class="btn btn-primary" style="padding: 14px 32px; font-size: 1.05rem;">
+                            🚀 Open Portal Dashboard
+                        </a>
+                    {% else %}
+                        <a href="/register" class="btn btn-primary" style="padding: 14px 32px; font-size: 1.05rem;">
+                            🚀 Get Started / Create Account
+                        </a>
+                        <a href="/login" class="btn btn-secondary" style="padding: 14px 28px; font-size: 1.05rem;">
+                            🔐 Sign In to Portal
+                        </a>
+                    {% endif %}
+                    
+                    <a href="https://wa.me/919227092091?text=Hello%20SK%20Software%2C%20I%20want%20details%20about%20Bank%20PDF%20Converter" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp" style="padding: 14px 26px; font-size: 1.02rem;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-5.46-4.45-9.92-9.91-9.92zm5.8 14.16c-.24.68-1.2 1.25-1.66 1.33-.44.07-1.02.1-1.65-.1-.4-.13-.91-.3-1.58-.59-2.78-1.2-4.59-4.04-4.73-4.23-.14-.19-1.14-1.52-1.14-2.9 0-1.38.72-2.06.98-2.35.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.42-.07.66.5.24.58.82 2 .89 2.15.07.15.12.33.02.53-.1.19-.15.31-.3.48-.15.17-.31.38-.45.51-.15.15-.31.31-.13.62.18.31.8 1.32 1.72 2.14 1.18 1.05 2.18 1.38 2.49 1.53.31.15.5.13.68-.08.19-.21.8-1.02.98-1.37.19-.35.38-.29.64-.19.26.1 1.66.78 1.95.92.29.14.48.21.55.33.07.12.07.69-.17 1.37z"/>
+                        </svg>
+                        <span>WhatsApp: +91 92270-92091</span>
+                    </a>
+                </div>
+
+                <!-- Free Trial Notice -->
+                <div style="margin-top: 14px; margin-bottom: 22px; text-align: center;">
+                    <div style="display: inline-flex; align-items: center; gap: 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); padding: 8px 20px; border-radius: 30px; font-size: 0.92rem; color: #a7f3d0; max-width: 95%;">
+                        <span style="background: #10b981; color: #042f2e; font-size: 0.76rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Free Trial</span>
+                        <span>Enjoy free trial access now! (Some advanced features will be paid in the future)</span>
+                    </div>
+                </div>
+
+                <!-- Trust Highlights Ribbon (Fills space cleanly) -->
+                <div style="text-align: center;">
+                    <div class="hero-trust-bar">
+                        <div class="trust-item"><span class="icon">⚡</span> <span>Multi-Page & Scanned PDF Support</span></div>
+                        <div class="trust-dot"></div>
+                        <div class="trust-item"><span class="icon">📑</span> <span>Indian Banks Compatible</span></div>
+                        <div class="trust-dot"></div>
+                        <div class="trust-item"><span class="icon">🎯</span> <span>Direct 1-Click Tally Prime Sync</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag">Core Features</span>
+                    <h2>Engineered for Chartered Accountants & Businesses</h2>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon-box">⚡</div>
+                        <h3>Direct Tally Prime Push</h3>
+                        <p>Import thousands of bank receipts and payment vouchers directly into your active Tally Prime company without touching manual ledger entry.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">📑</div>
+                        <h3>Multi-Page PDF Parsing</h3>
+                        <p>Handles password-protected statements, complex multi-line narrations, debit/credit column variations, and irregular table layouts accurately.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">📊</div>
+                        <h3>Standardized Excel Workbooks</h3>
+                        <p>Generates categorized multi-sheet workbooks with Run Code, DR/CR analysis, Withdrawal/Deposit separation, and Macro templates.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">🎯</div>
+                        <h3>Smart Suspense & Ledger Mapping</h3>
+                        <p>Auto-creates required master ledgers and allows dynamic mapping of bank accounts to correct Tally parent ledger groups.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="workflow-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag">Simple 3-Step Process</span>
+                    <h2>From Raw PDF to Tally Vouchers in Seconds</h2>
+                </div>
+
+                <div class="steps-container">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3>Upload Bank Statement</h3>
+                        <p>Upload single or multi-page statement PDFs from any bank. Password-protected statements are seamlessly handled.</p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3>Live Interactive Preview</h3>
+                        <p>Preview extracted transactions instantly in an editable table. Search narrations, verify dates, amounts, and mapped ledgers.</p>
+                    </div>
+
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3>1-Click Export or Tally Sync</h3>
+                        <p>Download a clean multi-sheet Excel file or push the vouchers directly into Tally Prime over local or ngrok connection.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Supported Banks Section -->
+        <section id="banks" class="banks-section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag">Universal Compatibility</span>
+                    <h2>Supported Indian Banks</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 6px;">
+                        Click on any bank below to view its supported statement format photo preview.
+                    </p>
+                </div>
+
+                <div class="banks-badge-grid">
+                    <div class="bank-badge" onclick="openBankFormat('sbi')"><span>State Bank of India (SBI)</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('hdfc')"><span>HDFC Bank</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('icici')"><span>ICICI Bank</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('axis')"><span>Axis Bank</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('kotak')"><span>Kotak Mahindra Bank</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('bob')"><span>Bank of Baroda (BOB)</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('boi')"><span>Bank of India (BOI)</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('ubi')"><span>Union Bank of India</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('idfc')"><span>IDFC First Bank</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('rbl')"><span>RBL Bank</span> <span class="badge-icon">↗</span></div>
+                    <div class="bank-badge" onclick="openBankFormat('coop')"><span>Cooperative & Regional Banks</span> <span class="badge-icon">↗</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact / WhatsApp Support Banner -->
+        <section id="contact" class="whatsapp-cta-section">
+            <div class="container">
+                <div class="whatsapp-cta-card">
+                    <div>
+                        <h2>Ready to Supercharge Your Accounting Workflow?</h2>
+                        <p>Get instant setup support, custom bank format mapping, or request your registration verification OTP directly on WhatsApp.</p>
+                    </div>
+                    <div>
+                        <a href="https://wa.me/919227092091?text=Hello%20SK%20Software%2C%20I%20want%20to%20get%20started%20with%20Bank%20PDF%20Converter" target="_blank" rel="noopener noreferrer" class="btn btn-whatsapp" style="padding: 16px 32px; font-size: 1.1rem;">
+                            💬 Chat on WhatsApp (+91 92270-92091)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
+                <a href="#banks">Banks</a>
+                <a href="#terms" onclick="openTermsModal(event)" style="color: var(--accent); font-weight: 600;">Terms & Conditions</a>
+                <a href="/login">Sign In</a>
+                <a href="/register">Register</a>
+                <a href="https://wa.me/919227092091?text=Support%20Enquiry%20SK%20Software" target="_blank">WhatsApp Support</a>
+            </div>
+            <p>&copy; 2026 SK Software. All rights reserved. Bank Statement PDF to Excel & Tally Prime Converter.</p>
+        </div>
+    </footer>
+
+    <!-- Terms & Conditions Modal (Bilingual: English & Hindi) -->
+    <div id="termsModal" class="bank-modal-overlay" style="display: none;" onclick="closeTermsModal(event)">
+        <div class="terms-modal-card" onclick="event.stopPropagation()">
+            <div class="bank-modal-header" style="flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700;">Legal Terms & Disclaimers / नियम एवं शर्तें</span>
+                    <h3 id="termsModalHeaderTitle" style="font-size: 1.45rem; font-weight: 800; margin-top: 2px;">Terms & Conditions of Service</h3>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.25); padding: 3px; border-radius: 24px; border: 1px solid var(--card-border);">
+                        <button id="termsTabEn" class="terms-lang-tab active" onclick="switchTermsLang('en')">🇬🇧 English</button>
+                        <button id="termsTabHi" class="terms-lang-tab" onclick="switchTermsLang('hi')">🇮🇳 हिंदी (Hindi)</button>
+                    </div>
+                    <button class="modal-close-btn" onclick="closeTermsModalDirect()">✕</button>
+                </div>
+            </div>
+            
+            <div class="terms-body-scroll">
+                <!-- ENGLISH CONTENT -->
+                <div id="termsContentEn">
+                    <!-- Highlighted Limitation of Liability Alert (Data Leaks) -->
+                    <div class="terms-alert-box" style="margin-bottom: 16px;">
+                        <div style="font-weight: 800; font-size: 0.98rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                            <span>⚠️</span> <span>STRICT LIMITATION OF LIABILITY & ZERO DATA LEAK RESPONSIBILITY</span>
+                        </div>
+                        <p style="margin: 0; line-height: 1.55; font-size: 0.88rem;">
+                            <strong>SK Software, its owners, developers, creators, operators, and hosting service providers are NOT responsible or liable under any circumstances for any data leaks, data breaches, unauthorized server/network access, third-party cyber attacks, malware, software interception, accidental disclosure, or loss of any bank statements, financial records, passwords, or personal identity details.</strong><br>
+                            By using this website, you explicitly agree that you process, convert, and store all documents at your own sole risk and discretion.
+                        </p>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div>
+                            <div class="terms-section-title"><span>1.</span> <span>Service Scope & Utility Purpose</span></div>
+                            <p style="color: var(--text-muted);">
+                                SK Software provides an automated algorithmic file conversion utility designed to parse bank statement PDF files into structured Excel spreadsheets and Tally Prime XML vouchers. The service is provided strictly on an <strong>"AS-IS"</strong> and <strong>"AS-AVAILABLE"</strong> basis without warranties of any kind, whether express, implied, or statutory.
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>2.</span> <span>Data Confidentiality & User Ownership</span></div>
+                            <p style="color: var(--text-muted);">
+                                Users retain full ownership of the files they upload. The software does not claim ownership or custodial rights over your financial statements. You affirm and warrant that you hold legitimate legal authorization to handle, convert, and process every statement uploaded to this portal. You are solely responsible for ensuring adequate device-level security, antivirus protection, and firewall controls on the machines accessing this service.
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>3.</span> <span>No Accounting, Tax, or Audit Liability</span></div>
+                            <p style="color: var(--text-muted);">
+                                This software is a technical automation tool and does not provide financial, tax, or statutory auditing advice. <strong>Chartered Accountants, accounting firms, and business operators are strictly required to independently review and reconcile all converted numbers, dates, ledger groups, vouchers, and tax balances prior to filing returns or finalizing books of accounts.</strong> SK Software accepts zero liability for accounting discrepancies, mathematical errors, ledger misallocations, or penalty assessments.
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>4.</span> <span>Third-Party & Tally Prime Integration</span></div>
+                            <p style="color: var(--text-muted);">
+                                Integration with Tally Prime or third-party platforms operates via user-provided local ports, XML gateways, or tunneling services. We are not responsible for Tally licensing issues, database corruptions, network port conflicts, third-party server downtimes, or communication failures.
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>5.</span> <span>Account Security & Credentials</span></div>
+                            <p style="color: var(--text-muted);">
+                                Users are exclusively responsible for safeguarding their login credentials, passwords, OTP verification codes, and registered sessions. Any activity conducted under your registered account is presumed to be authorized by you.
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>6.</span> <span>Unconditional Acceptance of Terms</span></div>
+                            <p style="color: var(--text-muted);">
+                                By visiting this homepage, registering an account, requesting an OTP, uploading any document, or using any feature of SK Software, you acknowledge that you have read, understood, and agreed to be legally bound by all terms, conditions, and liability disclaimers stated herein without limitation or exception.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HINDI CONTENT (हिंदी नियम एवं शर्तें) -->
+                <div id="termsContentHi" style="display: none;">
+                    <!-- Highlighted Limitation of Liability Alert in Hindi -->
+                    <div class="terms-alert-box" style="margin-bottom: 16px;">
+                        <div style="font-weight: 800; font-size: 0.98rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                            <span>⚠️</span> <span>सख्त दायित्व सीमा एवं डेटा लीक अस्वीकरण (DATA LEAK DISCLAIMER)</span>
+                        </div>
+                        <p style="margin: 0; line-height: 1.6; font-size: 0.88rem;">
+                            <strong>SK Software, इसके मालिक (Owner), डेवलपर्स, एडमिनिस्ट्रेटर और सर्वर/होस्टिंग प्रदाता किसी भी परिस्थिति में किसी भी प्रकार के डेटा लीक (Data Leaks), अनधिकृत डेटा एक्सेस (Data Breach), सर्वर या नेटवर्क हैकिंग, साइबर हमले, वायरस/मैलवेयर, या किसी भी बैंक स्टेटमेंट, वित्तीय रिकॉर्ड, पासवर्ड या व्यक्तिगत जानकारी के लीक, चोरी या नुकसान के लिए किसी भी तरह से उत्तरदायी या ज़िम्मेदार (Responsible) नहीं होंगे।</strong><br>
+                            इस वेबसाइट का उपयोग करके आप पूरी तरह से स्वीकार करते हैं कि आप अपनी फ़ाइलों को पूरी तरह से अपने स्वयं के जोखिम (Own Sole Risk) और विवेक पर कन्वर्ट, प्रोसेस और स्टोर करते हैं।
+                        </p>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div>
+                            <div class="terms-section-title"><span>1.</span> <span>सेवा का दायरा एवं उद्देश्य (Service Scope)</span></div>
+                            <p style="color: var(--text-muted);">
+                                SK Software केवल एक स्वचालित तकनीकी फ़ाइल कनवर्टर टूल है, जो बैंक स्टेटमेंट PDF फ़ाइलों को Excel स्प्रेडशीट और Tally Prime XML वाउचर में बदलने में मदद करता है। यह सेवा पूरी तरह से <strong>"जैसी है" (AS-IS)</strong> और <strong>"उपलब्धता के आधार पर" (AS-AVAILABLE)</strong> बिना किसी प्रकार की कानूनी या तकनीकी वारंटी के प्रदान की जाती है।
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>2.</span> <span>डेटा स्वामित्व एवं गोपनीयता (Data Ownership)</span></div>
+                            <p style="color: var(--text-muted);">
+                                अपलोड की गई सभी फ़ाइलों का पूर्ण स्वामित्व केवल उपयोगकर्ता के पास ही रहता है। आप पुष्टि करते हैं कि आपके पास उन बैंक स्टेटमेंट को अपलोड और प्रोसेस करने का वैध कानूनी अधिकार है। अपने कंप्यूटर, नेटवर्क, पासवर्ड और एंटीवायरस सुरक्षा को सुरक्षित रखना पूरी तरह से उपयोगकर्ता की ज़िम्मेदारी है।
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>3.</span> <span>अकाउंटिंग, टैक्स या ऑडिट की कोई ज़िम्मेदारी नहीं (No Accounting/Tax Liability)</span></div>
+                            <p style="color: var(--text-muted);">
+                                यह सॉफ़्टवेयर किसी भी प्रकार की वित्तीय, कर (Tax), या ऑडिट सलाह प्रदान नहीं करता है। <strong>चार्टर्ड एकाउंटेंट्स (CA), एकाउंटेंट्स और व्यापारियों को टैक्स रिटर्न फाइल करने या अंतिम बुक्स ऑफ़ एकाउंट्स तैयार करने से पहले सभी आंकड़ों, तारीखों, डेबिट/क्रेडिट राशियों और लेज़र पोस्टिंग का स्वयं सत्यापन और मिलान (Verify & Reconcile) करना अनिवार्य है।</strong> किसी भी प्रकार की अकाउंटिंग गलती, गलत टैक्स फाइलिंग या पेनल्टी के लिए SK Software ज़िम्मेदार नहीं होगा।
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>4.</span> <span>टैली प्राइम एवं थर्ड-पार्टी इंटीग्रेशन (Tally Prime Integration)</span></div>
+                            <p style="color: var(--text-muted);">
+                                Tally Prime या अन्य सॉफ़्टवेयर के साथ डेटा सिंक उपयोगकर्ता के लोकल नेटवर्क और पोर्ट्स पर संचालित होता है। Tally लाइसेंसिंग समस्या, नेटवर्क रुकावट, डेटाबेस करप्शन या सर्वर डाउनटाइम के लिए हम ज़िम्मेदार नहीं हैं।
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>5.</span> <span>अकाउंट एवं क्रेडेंशियल सुरक्षा (Account Security)</span></div>
+                            <p style="color: var(--text-muted);">
+                                अपने यूज़रनेम, पासवर्ड और OTP वेरिफिकेशन कोड को सुरक्षित और गोपनीय रखना केवल उपयोगकर्ता की ज़िम्मेदारी है। आपके अकाउंट से की गई किसी भी गतिविधि के लिए आप स्वयं उत्तरदायी होंगे।
+                            </p>
+                        </div>
+
+                        <div>
+                            <div class="terms-section-title"><span>6.</span> <span>शर्तों की पूर्ण एवं बिना शर्त स्वीकृति (Unconditional Acceptance)</span></div>
+                            <p style="color: var(--text-muted);">
+                                इस वेबसाइट का उपयोग करने, अकाउंट बनाने, OTP मांगने या किसी भी दस्तावेज़ को प्रोसेस करने का सीधा अर्थ है कि आपने इन सभी नियमों, शर्तों और दायित्व अस्वीकरणों (Disclaimers) को ध्यानपूर्वक पढ़, समझ और स्वीकार कर लिया है।
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--card-border); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <span id="termsFooterNote" style="font-size: 0.8rem; color: var(--text-muted);">SK Software &bull; Legal Compliance &bull; 2026</span>
+                <button id="termsAcceptBtn" class="btn btn-primary" onclick="closeTermsModalDirect()" style="padding: 10px 24px; font-size: 0.92rem;">
+                    ✓ I Understand & Accept
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Format Modal -->
+    <div id="bankFormatModal" class="bank-modal-overlay" style="display: none;" onclick="closeBankModal(event)">
+        <div class="bank-modal-card" onclick="event.stopPropagation()">
+            <div class="bank-modal-header">
+                <div>
+                    <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700;">Supported Format Photos</span>
+                    <h3 id="modalBankTitle" style="font-size: 1.45rem; font-weight: 800; margin-top: 2px;">Bank Name</h3>
+                </div>
+                <button class="modal-close-btn" onclick="closeBankModalDirect()">✕</button>
+            </div>
+            
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin: 4px 0 16px 0; line-height: 1.5;">
+                Click any format below to preview its transaction table layout and column structure. Personal account headers have been cropped out for complete privacy.
+            </p>
+
+            <div id="modalFormatsList" class="modal-body-scroll">
+                <!-- Dynamically populated format cards -->
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px dashed var(--card-border); border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <span>Have a different format from this bank?</span>
+                <a href="https://wa.me/919227092091?text=Hello%20SK%20Software%2C%20I%20have%20a%20new%20bank%20statement%20format%20for%20testing" target="_blank" style="color: #25d366; font-weight: 600; text-decoration: none;">Send Sample on WhatsApp ↗</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Lightbox Modal -->
+    <div id="photoLightboxModal" class="lightbox-modal" style="display: none;" onclick="closeLightbox(event)">
+        <div class="lightbox-content-card" onclick="event.stopPropagation()">
+            <div class="lightbox-header">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="lightboxTitle" style="font-size: 1.15rem; font-weight: 700;">Statement Format Photo Preview</span>
+                        <span class="format-privacy-badge">🔒 Format Photo Only • Details Cropped</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Account numbers & customer details are cropped out for confidentiality</div>
+                </div>
+                <button class="modal-close-btn" onclick="closeLightboxDirect()">✕</button>
+            </div>
+            <div class="lightbox-img-container">
+                <img id="lightboxImg" src="" alt="Bank Statement Format Photo" class="lightbox-img">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeBtn = document.getElementById('theme-toggle-btn');
+        const themeThumb = document.getElementById('theme-thumb');
+        function updateThumb(t) {
+            if (themeThumb) {
+                themeThumb.style.transform = t === 'light' ? 'translateX(0px)' : 'translateX(20px)';
+            }
+        }
+        const initialTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        updateThumb(initialTheme);
+        if (themeBtn) {
+            themeBtn.addEventListener('click', () => {
+                const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+                const next = cur === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('bank_app_theme', next);
+                updateThumb(next);
+            });
+        }
+
+        // Bank Formats Mapping
+        const bankFormats = {
+            'sbi': {
+                name: 'State Bank of India (SBI)',
+                formats: [
+                    { title: 'SBI Format 1 (Standard E-Statement)', file: 'SBI1.pdf' },
+                    { title: 'SBI Format 2 (Detailed Passbook Statement)', file: 'SBI2.pdf' },
+                    { title: 'SBI Format 3 (Corporate / Multi-Column)', file: 'SBI3.pdf' }
+                ]
+            },
+            'hdfc': {
+                name: 'HDFC Bank',
+                formats: [
+                    { title: 'HDFC Format 1 (Standard E-Statement)', file: 'HDFC1.pdf' },
+                    { title: 'HDFC Format 2 (Detailed Statement)', file: 'HDFC2.pdf' },
+                    { title: 'HDFC Format 3 (Corporate / Current Account)', file: 'HDFC3.pdf' }
+                ]
+            },
+            'icici': {
+                name: 'ICICI Bank',
+                formats: [
+                    { title: 'ICICI Format 1 (Retail NetBanking Statement)', file: 'ICICI1.pdf' },
+                    { title: 'ICICI Format 2 (Corporate Statement)', file: 'ICICI2.pdf' },
+                    { title: 'ICICI Format 3 (Detailed Summary & Ledger)', file: 'ICICI3.pdf' }
+                ]
+            },
+            'axis': {
+                name: 'Axis Bank',
+                formats: [
+                    { title: 'Axis Bank Standard Statement', file: 'AXIS.PDF' }
+                ]
+            },
+            'kotak': {
+                name: 'Kotak Mahindra Bank',
+                formats: [
+                    { title: 'Kotak Mahindra Statement Format', file: 'Kotak.pdf' }
+                ]
+            },
+            'bob': {
+                name: 'Bank of Baroda (BOB)',
+                formats: [
+                    { title: 'Bank of Baroda E-Statement Format', file: 'BOB.pdf' }
+                ]
+            },
+            'boi': {
+                name: 'Bank of India (BOI)',
+                formats: [
+                    { title: 'Bank of India Format 1', file: 'BOI1.pdf' },
+                    { title: 'Bank of India Format 2', file: 'BOI2.pdf' }
+                ]
+            },
+            'ubi': {
+                name: 'Union Bank of India (UBI)',
+                formats: [
+                    { title: 'Union Bank Format 1', file: 'UBI1.pdf' },
+                    { title: 'Union Bank Format 2', file: 'UBI2.pdf' },
+                    { title: 'Union Bank Format 3', file: 'UBI3.pdf' }
+                ]
+            },
+            'idfc': {
+                name: 'IDFC First Bank',
+                formats: [
+                    { title: 'IDFC First Bank Statement Format', file: 'IDFC.pdf' }
+                ]
+            },
+            'rbl': {
+                name: 'RBL Bank',
+                formats: [
+                    { title: 'RBL Bank Statement Format', file: 'RBL.pdf' }
+                ]
+            },
+            'coop': {
+                name: 'Cooperative & Regional Banks',
+                formats: [
+                    { title: 'The Mehsana Urban Co-op Bank', file: 'The Mehsana.pdf' },
+                    { title: 'Modasa Nagrik Co-op Bank', file: 'Modasa Nagrik bank.pdf' },
+                    { title: 'Prime Co-operative Bank', file: 'prime bank.pdf' },
+                    { title: 'SK Regional Bank Format', file: 'SK.pdf' }
+                ]
+            }
+        };
+
+        function openBankFormat(bankKey) {
+            const data = bankFormats[bankKey];
+            if (!data) return;
+            
+            document.getElementById('modalBankTitle').textContent = data.name;
+            const listEl = document.getElementById('modalFormatsList');
+            listEl.innerHTML = '';
+            
+            data.formats.forEach((fmt) => {
+                if (fmt.file) {
+                    const baseName = fmt.file.replace(/\.pdf$/i, '');
+                    const imgUrl = '/bank_formats/images/' + encodeURIComponent(baseName + '.png');
+                    
+                    const card = document.createElement('div');
+                    card.className = 'format-item-card';
+                    card.innerHTML = `
+                        <div class="format-card-header">
+                            <span class="format-card-title">
+                                <span style="font-size: 1.1rem;">📑</span>
+                                <span>${fmt.title}</span>
+                            </span>
+                            <span class="format-privacy-badge">🔒 Photo Only (Cropped)</span>
+                        </div>
+                        <div class="format-preview-row">
+                            <div class="format-thumb-wrapper" onclick="openLightbox('${imgUrl}', '${fmt.title.replace(/'/g, "\\'")}')" title="Click to enlarge photo">
+                                <img src="${imgUrl}" alt="${fmt.title}" class="format-thumb-img" loading="lazy">
+                                <div class="format-thumb-overlay">
+                                    <span>🔍 View Photo</span>
+                                </div>
+                            </div>
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">
+                                    Cropped table format showing bank column layout, dates & narration structure. Personal headers completely removed.
+                                </div>
+                                <div class="format-actions">
+                                    <button class="btn-format-photo" onclick="openLightbox('${imgUrl}', '${fmt.title.replace(/'/g, "\\'")}')">
+                                        <span>📸 View Format Photo Preview</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                } else {
+                    const row = document.createElement('div');
+                    row.className = 'format-item-card';
+                    row.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 1.25rem;">✅</span>
+                                <div>
+                                    <div style="font-weight: 600;">${fmt.title}</div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted);">${fmt.desc || 'Supported'}</div>
+                                </div>
+                            </div>
+                            <span style="color: var(--success); font-size: 0.82rem; font-weight: 600;">Active</span>
+                        </div>
+                    `;
+                    listEl.appendChild(row);
+                }
+            });
+            
+            const modal = document.getElementById('bankFormatModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeBankModalDirect() {
+            document.getElementById('bankFormatModal').style.display = 'none';
+        }
+
+        function closeBankModal(e) {
+            if (e.target.id === 'bankFormatModal') {
+                closeBankModalDirect();
+            }
+        }
+
+        function openLightbox(imgUrl, title) {
+            document.getElementById('lightboxImg').src = imgUrl;
+            document.getElementById('lightboxTitle').textContent = title;
+            document.getElementById('photoLightboxModal').style.display = 'flex';
+        }
+
+        function closeLightboxDirect() {
+            document.getElementById('photoLightboxModal').style.display = 'none';
+        }
+
+        function closeLightbox(e) {
+            if (e.target.id === 'photoLightboxModal') {
+                closeLightboxDirect();
+            }
+        }
+
+        // Terms & Conditions Modal handlers
+        function openTermsModal(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const modal = document.getElementById('termsModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeTermsModalDirect() {
+            const modal = document.getElementById('termsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function closeTermsModal(e) {
+            if (e.target.id === 'termsModal') {
+                closeTermsModalDirect();
+            }
+        }
+
+        // Bilingual Language Switcher for Terms (English / Hindi)
+        function switchTermsLang(lang) {
+            const enContent = document.getElementById('termsContentEn');
+            const hiContent = document.getElementById('termsContentHi');
+            const tabEn = document.getElementById('termsTabEn');
+            const tabHi = document.getElementById('termsTabHi');
+            const headerTitle = document.getElementById('termsModalHeaderTitle');
+            const acceptBtn = document.getElementById('termsAcceptBtn');
+            const footerNote = document.getElementById('termsFooterNote');
+            
+            if (lang === 'hi') {
+                if (enContent) enContent.style.display = 'none';
+                if (hiContent) hiContent.style.display = 'block';
+                if (tabEn) tabEn.classList.remove('active');
+                if (tabHi) tabHi.classList.add('active');
+                if (headerTitle) headerTitle.textContent = 'सेवा की नियम एवं शर्तें (Terms & Conditions)';
+                if (acceptBtn) acceptBtn.textContent = '✓ मैं समझता हूँ और स्वीकार करता हूँ';
+                if (footerNote) footerNote.textContent = 'SK Software • कानूनी अनुपालन • 2026';
+            } else {
+                if (enContent) enContent.style.display = 'block';
+                if (hiContent) hiContent.style.display = 'none';
+                if (tabEn) tabEn.classList.add('active');
+                if (tabHi) tabHi.classList.remove('active');
+                if (headerTitle) headerTitle.textContent = 'Terms & Conditions of Service';
+                if (acceptBtn) acceptBtn.textContent = '✓ I Understand & Accept';
+                if (footerNote) footerNote.textContent = 'SK Software • Legal Compliance • 2026';
+            }
+        }
+    </script>
+</body>
+</html>
