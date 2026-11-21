@@ -1345,7 +1345,7 @@ def update_google_sheets_config():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if 'username' in session and session.get('role'):
+    if 'username' in session:
         return redirect(url_for('index'))
         
     error = None
@@ -1380,22 +1380,18 @@ def register():
                 ip_address=ip_addr
             )
             if success:
-                # Also store in encrypted browser session cookie as persistent fallback
-                import time
-                from werkzeug.security import generate_password_hash
+                # Store fallback registration data in session for robust multi-worker verification
                 session['pending_registration'] = {
                     "username": username,
-                    "password_hash": generate_password_hash(password),
+                    "password_hash": user_manager.generate_password_hash(password),
                     "plain_password": password,
                     "full_name": full_name,
                     "mobile": mobile,
                     "email": email,
                     "device_id": device_id,
                     "ip_address": ip_addr,
-                    "otp": str(otp),
-                    "created_at": time.time()
+                    "otp": str(otp)
                 }
-                
                 email_ok, email_msg = user_manager.send_otp_email(
                     username=username, 
                     otp=otp, 
@@ -1423,28 +1419,17 @@ def register():
 
 @app.route('/verify_otp', methods=['GET', 'POST'])
 def verify_otp():
-    if 'username' in session and session.get('role'):
+    if 'username' in session:
         return redirect(url_for('index'))
         
-    username = (request.form.get('username') or request.args.get('username') or '').strip()
-    session_reg = session.get('pending_registration')
-    if not username and session_reg:
-        username = session_reg.get('username', '').strip()
-        
+    username = request.args.get('username', '').strip()
     if not username:
         return redirect(url_for('register'))
-        
-    # Check if user is already verified and exists in active users
-    users = user_manager.load_users()
-    for existing_u in users.keys():
-        if existing_u.lower() == username.lower():
-            flash(f"Account '{existing_u}' is already verified and active! Please log in.", "info")
-            session.pop('pending_registration', None)
-            return redirect(url_for('login'))
         
     error = None
     if request.method == 'POST':
         input_otp = request.form.get('otp', '').strip()
+        session_reg = session.get('pending_registration')
         success, msg = user_manager.verify_otp_and_activate(username, input_otp, fallback_data=session_reg)
         if success:
             session.pop('pending_registration', None)

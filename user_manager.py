@@ -536,24 +536,29 @@ def add_pending_registration(username, password, otp, full_name="", mobile="", e
     else:
         return False, "Failed to save pending registration details."
 
-def verify_otp_and_activate(username, input_otp):
-    """Check OTP and activate pending registration account as Operator, saving details to Excel."""
+def verify_otp_and_activate(username, input_otp, fallback_data=None, **kwargs):
+    """Check OTP and activate pending registration account as Operator, saving details to Google Sheets Cloud."""
     pending = load_pending_registrations()
     username_lower = username.strip().lower()
     input_otp_str = str(input_otp).strip()
     
-    if username_lower not in pending:
+    reg_data = pending.get(username_lower)
+    if not reg_data and fallback_data and isinstance(fallback_data, dict):
+        if fallback_data.get("username", "").strip().lower() == username_lower:
+            reg_data = fallback_data
+            
+    if not reg_data:
         return False, "No pending registration found for this user."
         
-    reg_data = pending[username_lower]
-    if reg_data["otp"] != input_otp_str:
-        return False, "Invalid verification code. Please check the OTP sent to the administrator's email."
+    if str(reg_data.get("otp", "")).strip() != input_otp_str:
+        return False, "Invalid verification code. Please check your OTP code and try again."
         
     # Valid OTP - Create user account
     users = load_users()
-    users[reg_data["username"]] = {
+    reg_username = reg_data.get("username") or username.strip()
+    users[reg_username] = {
         "role": "operator",
-        "password_hash": reg_data["password_hash"],
+        "password_hash": reg_data.get("password_hash"),
         "full_name": reg_data.get("full_name", ""),
         "mobile": reg_data.get("mobile", ""),
         "email": reg_data.get("email", ""),
@@ -564,7 +569,6 @@ def verify_otp_and_activate(username, input_otp):
         return False, "Failed to save user database."
         
     # Directly sync new user registration to Google Sheets Cloud in real-time
-    reg_username = reg_data["username"]
     sync_user_to_google_sheet({
         "action": "save",
         "date_time": datetime.now().strftime("%d-%m-%Y %I:%M:%S %p"),
@@ -581,8 +585,9 @@ def verify_otp_and_activate(username, input_otp):
     }, background=True)
         
     # Clean up pending entry
-    del pending[username_lower]
-    save_pending_registrations(pending)
+    if username_lower in pending:
+        del pending[username_lower]
+        save_pending_registrations(pending)
     
     return True, "User account created and activated successfully! You can now sign in."
 
