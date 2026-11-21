@@ -1401,7 +1401,6 @@ def register():
                     email=email
                 )
                 if email_ok:
-                    flash("Verification OTP sent! Check your email or Google Sheet for the code.", "info")
                     return redirect(url_for('verify_otp', username=username))
                 else:
                     # Rollback pending registration if email sending fails
@@ -1433,11 +1432,12 @@ def verify_otp():
         success, msg = user_manager.verify_otp_and_activate(username, input_otp, fallback_data=session_reg)
         if success:
             session.pop('pending_registration', None)
+            session.pop('_flashes', None)  # Clear all previous stacked flash messages
             # Auto-authorize this device so user is not blocked
             device_token = getattr(g, 'device_token', None)
             if device_token:
                 device_manager.authorize_device(device_token, name=f"{username} (Verified Device)")
-            flash("Account verified successfully! Details saved to Google Sheets cloud.", 'success')
+            flash("completed register and login", "success")
             return redirect(url_for('login'))
         else:
             error = msg
